@@ -1,4 +1,5 @@
 ﻿namespace SqlServerInterrogator.Services;
+
 using Microsoft.Data.SqlClient;
 using SqlServerInterrogator.Models;
 using SqlServerInterrogator.SqlScripts;
@@ -12,7 +13,10 @@ public class DatabaseInterrogator
         CancellationToken cancellationToken = default)
     {
         var tables = new List<TableInfo>();
-        await foreach (var table in GetTableInfoEnumerableAsync(connectionString, databaseName, cancellationToken)
+        await foreach (var table in GetTableInfoEnumerableAsync(
+            connectionString, 
+            databaseName, 
+            cancellationToken)
             .WithCancellation(cancellationToken))
         {
             tables.Add(table);
@@ -22,8 +26,8 @@ public class DatabaseInterrogator
     }
 
     public static async IAsyncEnumerable<TableInfo> GetTableInfoEnumerableAsync(
-        string connectionString, 
-        string databaseName, 
+        string connectionString,
+        string databaseName,
         [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
         await using var connection = new SqlConnection(connectionString);
@@ -54,8 +58,16 @@ public class DatabaseInterrogator
                 RowCount = reader.GetInt64(reader.GetOrdinal("RowCount"))
             };
 
-            table.Columns = await GetColumnInfoAsync(connectionString, databaseName, table.TableId, cancellationToken);
-            table.Keys = await GetKeyInfoAsync(connectionString, databaseName, table.TableId, cancellationToken);
+            table.Columns = await GetColumnInfoAsync(
+                connectionString, 
+                databaseName, 
+                table.TableId, 
+                cancellationToken);
+            table.Keys = await GetKeyInfoAsync(
+                connectionString, 
+                databaseName, 
+                table.TableId, 
+                cancellationToken);
 
             yield return table;
         }
@@ -68,7 +80,11 @@ public class DatabaseInterrogator
         CancellationToken cancellationToken = default)
     {
         var columns = new List<ColumnInfo>();
-        await foreach (var column in GetColumnInfoEnumerableAsync(connectionString, databaseName, tableId, cancellationToken)
+        await foreach (var column in GetColumnInfoEnumerableAsync(
+            connectionString, 
+            databaseName, 
+            tableId, 
+            cancellationToken)
             .WithCancellation(cancellationToken))
         {
             columns.Add(column);
@@ -112,8 +128,8 @@ public class DatabaseInterrogator
                 IsIdentity = reader.GetBoolean(reader.GetOrdinal("IsIdentity")),
                 IsComputed = reader.GetBoolean(reader.GetOrdinal("IsComputed")),
                 OrdinalPosition = reader.GetInt32(reader.GetOrdinal("OrdinalPosition")),
-                DefaultValue = reader.IsDBNull(reader.GetOrdinal("DefaultValue")) 
-                    ? null 
+                DefaultValue = reader.IsDBNull(reader.GetOrdinal("DefaultValue"))
+                    ? null
                     : reader.GetString(reader.GetOrdinal("DefaultValue"))
             };
         }
@@ -126,7 +142,11 @@ public class DatabaseInterrogator
         CancellationToken cancellationToken = default)
     {
         var keys = new List<KeyInfo>();
-        await foreach (var key in GetKeyInfoEnumerableAsync(connectionString, databaseName, tableId, cancellationToken)
+        await foreach (var key in GetKeyInfoEnumerableAsync(
+            connectionString, 
+            databaseName, 
+            tableId, 
+            cancellationToken)
             .WithCancellation(cancellationToken))
         {
             keys.Add(key);

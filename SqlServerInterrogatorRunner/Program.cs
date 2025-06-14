@@ -14,7 +14,7 @@ foreach (var db in databases)
 
 var tables = await DatabaseInterrogator.GetTableInfoAsync(connectionString, "ApiSelfService");
 
-foreach(var table in tables)
+foreach (var table in tables)
 {
     Console.WriteLine($"Table: {table.Name}, Schema: {table.SchemaName}, Type: {table.Type}, Row Count: {table.RowCount}");
 }

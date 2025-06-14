@@ -12,7 +12,6 @@ public sealed class KeyInfo
     public bool IsDisabled { get; set; }
     public DateTime CreateDate { get; set; }
     public DateTime ModifyDate { get; set; }
-    public List<ColumnInfo>? Columns { get; set; } = []; // Columns that are part of the key
     public int TableId { get; internal set; }
     public bool IsSystemNamed { get; internal set; }
 }

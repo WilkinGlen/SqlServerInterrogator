@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 public sealed class ServerInterrogator
 {
     public static async Task<List<DatabaseInfo>> GetDatabasesAsync(
-        string serverConnectionString, 
+        string serverConnectionString,
         CancellationToken cancellationToken = default)
     {
         var databases = new List<DatabaseInfo>();
@@ -40,10 +40,13 @@ public sealed class ServerInterrogator
             {
                 DatabaseId = reader.GetInt32(reader.GetOrdinal("DatabaseId")),
                 Name = reader.GetString(reader.GetOrdinal("Name")),
-                Owner = reader.IsDBNull(reader.GetOrdinal("Owner")) ? null : reader.GetString(reader.GetOrdinal("Owner")),
+                Owner = reader.IsDBNull(reader.GetOrdinal("Owner")) ? null : 
+                    reader.GetString(reader.GetOrdinal("Owner")),
                 CreateDate = reader.GetDateTime(reader.GetOrdinal("CreateDate")),
-                CollationName = reader.IsDBNull(reader.GetOrdinal("CollationName")) ? null : reader.GetString(reader.GetOrdinal("CollationName")),
-                RecoveryModel = reader.IsDBNull(reader.GetOrdinal("RecoveryModel")) ? null : reader.GetString(reader.GetOrdinal("RecoveryModel")),
+                CollationName = reader.IsDBNull(reader.GetOrdinal("CollationName")) ? null : 
+                    reader.GetString(reader.GetOrdinal("CollationName")),
+                RecoveryModel = reader.IsDBNull(reader.GetOrdinal("RecoveryModel")) ? null : 
+                    reader.GetString(reader.GetOrdinal("RecoveryModel")),
                 CompatibilityLevel = reader.GetByte(reader.GetOrdinal("CompatibilityLevel")),
                 IsReadOnly = reader.GetBoolean(reader.GetOrdinal("IsReadOnly")),
                 IsAutoCloseOn = reader.GetBoolean(reader.GetOrdinal("IsAutoCloseOn")),
@@ -51,13 +54,16 @@ public sealed class ServerInterrogator
                 IsEncrypted = reader.GetBoolean(reader.GetOrdinal("IsEncrypted")),
                 SizeMB = reader.GetInt64(reader.GetOrdinal("SizeMB")),
                 SpaceAvailableMB = reader.GetInt64(reader.GetOrdinal("SpaceAvailableMB")),
-                State = reader.IsDBNull(reader.GetOrdinal("State")) ? null : reader.GetString(reader.GetOrdinal("State")),
-                DefaultFileGroup = reader.IsDBNull(reader.GetOrdinal("DefaultFileGroup")) ? null : reader.GetString(reader.GetOrdinal("DefaultFileGroup")),
+                State = reader.IsDBNull(reader.GetOrdinal("State")) ? null : 
+                    reader.GetString(reader.GetOrdinal("State")),
+                DefaultFileGroup = reader.IsDBNull(reader.GetOrdinal("DefaultFileGroup")) ? null : 
+                    reader.GetString(reader.GetOrdinal("DefaultFileGroup")),
                 LastBackupDate = reader.GetDateTime(reader.GetOrdinal("LastBackupDate")),
                 LastLogBackupDate = reader.GetDateTime(reader.GetOrdinal("LastLogBackupDate")),
                 IsInStandby = reader.GetBoolean(reader.GetOrdinal("IsInStandby")),
                 IsBrokerEnabled = reader.GetBoolean(reader.GetOrdinal("IsBrokerEnabled")),
-                UserAccess = reader.IsDBNull(reader.GetOrdinal("UserAccess")) ? null : reader.GetString(reader.GetOrdinal("UserAccess"))
+                UserAccess = reader.IsDBNull(reader.GetOrdinal("UserAccess")) ? null : 
+                    reader.GetString(reader.GetOrdinal("UserAccess"))
             };
         }
     }

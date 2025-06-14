@@ -30,7 +30,7 @@ internal static class DatabaseInterrogatorSqlScripts
         WHERE i.index_id <= 1
         ORDER BY s.name, t.name";
 
-    internal const string GetColumnInfoEnumerableAsyncSql =         
+    internal const string GetColumnInfoEnumerableAsyncSql =
         @"
         SELECT 
             c.column_id AS ColumnId,
