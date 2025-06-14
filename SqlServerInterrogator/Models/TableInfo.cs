@@ -14,4 +14,6 @@ public sealed class TableInfo
     public DateTime CreateDate { get; set; }
     public DateTime ModifyDate { get; set; }
     public long RowCount { get; set; }
+    public List<ColumnInfo>? Columns { get; set; } = [];
+    public List<KeyInfo>? Keys { get; set; } = [];
 }
