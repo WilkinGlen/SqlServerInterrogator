@@ -1,0 +1,31 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.14.36203.30 d17.14
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SqlServerInterrogator", "SqlServerInterrogator\SqlServerInterrogator.csproj", "{C1B00CFB-0ECE-445F-AD4F-2919FE69635C}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SqlServerInterrogatorRunner", "SqlServerInterrogatorRunner\SqlServerInterrogatorRunner.csproj", "{8F70162A-6C32-42E5-902E-1D087749B6F1}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{C1B00CFB-0ECE-445F-AD4F-2919FE69635C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C1B00CFB-0ECE-445F-AD4F-2919FE69635C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C1B00CFB-0ECE-445F-AD4F-2919FE69635C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C1B00CFB-0ECE-445F-AD4F-2919FE69635C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8F70162A-6C32-42E5-902E-1D087749B6F1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8F70162A-6C32-42E5-902E-1D087749B6F1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8F70162A-6C32-42E5-902E-1D087749B6F1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8F70162A-6C32-42E5-902E-1D087749B6F1}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {53754FAD-BCCA-4778-811A-6E9948E0B3CC}
+	EndGlobalSection
+EndGlobal
