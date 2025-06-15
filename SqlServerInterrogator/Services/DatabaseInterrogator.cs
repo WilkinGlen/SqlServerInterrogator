@@ -345,4 +345,154 @@ public class DatabaseInterrogator
             };
         }
     }
+
+    /// <summary>
+    /// Retrieves a list of stored procedures in the specified database.
+    /// </summary>
+    /// <param name="connectionString">The connection string to the SQL Server instance.</param>
+    /// <param name="databaseName">The name of the database to interrogate.</param>
+    /// <param name="cancellationToken">Optional token to cancel the operation.</param>
+    /// <returns>A list of <see cref="StoredProcedureInfo"/> objects containing procedure information.</returns>
+    public static async Task<List<StoredProcedureInfo>> GetStoredProcedureInfoAsync(
+        string connectionString,
+        string databaseName,
+        CancellationToken cancellationToken = default)
+    {
+        var procedures = new List<StoredProcedureInfo>();
+        await foreach (var proc in GetStoredProcedureInfoEnumerableAsync(
+            connectionString, 
+            databaseName, 
+            cancellationToken)
+            .WithCancellation(cancellationToken))
+        {
+            procedures.Add(proc);
+        }
+
+        return procedures;
+    }
+
+    /// <summary>
+    /// Provides an asynchronous enumerable of stored procedure information from the specified database.
+    /// </summary>
+    /// <param name="connectionString">The connection string to the SQL Server instance.</param>
+    /// <param name="databaseName">The name of the database to interrogate.</param>
+    /// <param name="cancellationToken">Token to cancel the operation.</param>
+    /// <returns>An asynchronous enumerable of <see cref="StoredProcedureInfo"/> objects.</returns>
+    /// <remarks>
+    /// This method retrieves comprehensive information about each stored procedure,
+    /// including its definition and parameters.
+    /// </remarks>
+    public static async IAsyncEnumerable<StoredProcedureInfo> GetStoredProcedureInfoEnumerableAsync(
+        string connectionString,
+        string databaseName,
+        [EnumeratorCancellation] CancellationToken cancellationToken = default)
+    {
+        await using var connection = new SqlConnection(connectionString);
+        await connection.OpenAsync(cancellationToken);
+
+        var sql = $@"USE [{databaseName}];
+            SELECT 
+                p.object_id AS ProcedureId,
+                p.name AS Name,
+                s.name AS SchemaName,
+                p.type AS Type,
+                p.type_desc AS TypeDesc,
+                p.is_ms_shipped AS IsSystemObject,
+                p.create_date AS CreateDate,
+                p.modify_date AS ModifyDate,
+                m.definition AS Definition
+            FROM sys.procedures p
+                INNER JOIN sys.schemas s ON p.schema_id = s.schema_id
+                LEFT JOIN sys.sql_modules m ON p.object_id = m.object_id
+            ORDER BY s.name, p.name;";
+
+        await using var command = new SqlCommand(sql, connection);
+        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+        
+        while (await reader.ReadAsync(cancellationToken) && !cancellationToken.IsCancellationRequested)
+        {
+            if (cancellationToken.IsCancellationRequested)
+            {
+                yield break;
+            }
+
+            var procId = reader.GetInt32(reader.GetOrdinal("ProcedureId"));
+            
+            var procedure = new StoredProcedureInfo
+            {
+                ProcedureId = procId,
+                Name = reader.GetString(reader.GetOrdinal("Name")),
+                SchemaName = reader.GetString(reader.GetOrdinal("SchemaName")),
+                Type = reader.GetString(reader.GetOrdinal("Type")),
+                TypeDesc = reader.GetString(reader.GetOrdinal("TypeDesc")),
+                IsSystemObject = reader.GetBoolean(reader.GetOrdinal("IsSystemObject")),
+                CreateDate = reader.GetDateTime(reader.GetOrdinal("CreateDate")),
+                ModifyDate = reader.GetDateTime(reader.GetOrdinal("ModifyDate")),
+                Definition = reader.IsDBNull(reader.GetOrdinal("Definition"))
+                    ? null
+                    : reader.GetString(reader.GetOrdinal("Definition")),
+                Parameters = await GetStoredProcedureParametersAsync(
+                    connection, 
+                    procId, 
+                    cancellationToken)
+            };
+
+            yield return procedure;
+        }
+    }
+
+    /// <summary>
+    /// Retrieves the parameters for a specific stored procedure.
+    /// </summary>
+    /// <param name="connection">An open SQL connection.</param>
+    /// <param name="procedureId">The ID of the stored procedure.</param>
+    /// <param name="cancellationToken">Token to cancel the operation.</param>
+    /// <returns>A list of parameter names and types.</returns>
+    private static async Task<List<string>> GetStoredProcedureParametersAsync(
+        SqlConnection connection,
+        int procedureId,
+        CancellationToken cancellationToken)
+    {
+        var sql = @"
+            SELECT 
+                p.name AS ParameterName,
+                t.name AS DataType,
+                p.max_length AS MaxLength,
+                p.precision AS Precision,
+                p.scale AS Scale
+            FROM sys.parameters p
+                INNER JOIN sys.types t ON p.user_type_id = t.user_type_id
+            WHERE p.object_id = @ProcedureId
+            ORDER BY p.parameter_id;";
+
+        await using var command = new SqlCommand(sql, connection);
+        command.Parameters.AddWithValue("@ProcedureId", procedureId);
+
+        var parameters = new List<string>();
+        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+        
+        while (await reader.ReadAsync(cancellationToken))
+        {
+            var paramName = reader.GetString(reader.GetOrdinal("ParameterName"));
+            var dataType = reader.GetString(reader.GetOrdinal("DataType"));
+            var maxLength = reader.GetInt16(reader.GetOrdinal("MaxLength"));
+            var precision = reader.GetByte(reader.GetOrdinal("Precision"));
+            var scale = reader.GetByte(reader.GetOrdinal("Scale"));
+
+            var parameterDefinition = $"{paramName} {dataType}";
+            
+            if (dataType == "varchar" || dataType == "nvarchar" || dataType == "char" || dataType == "nchar")
+            {
+                parameterDefinition += maxLength == -1 ? "(MAX)" : $"({maxLength})";
+            }
+            else if (dataType == "decimal" || dataType == "numeric")
+            {
+                parameterDefinition += $"({precision},{scale})";
+            }
+
+            parameters.Add(parameterDefinition);
+        }
+
+        return parameters;
+    }
 }

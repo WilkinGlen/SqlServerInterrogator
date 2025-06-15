@@ -3,20 +3,11 @@ using SqlServerInterrogator.Services;
 
 Console.WriteLine("Hello, World!");
 
-var connectionString = "Server=localhost;Integrated Security=True;TrustServerCertificate=True;";
+var connectionString = "Server=localhost;Integrated Security=True;TrustServerCertificate=True;MultipleActiveResultSets=True;";
 
 var databases = await ServerInterrogator.GetDatabasesAsync(connectionString);
-
-foreach (var db in databases)
-{
-    Console.WriteLine($"Database: {db.Name}, Owner: {db.Owner}, Size: {db.SizeMB} MB, State: {db.State}");
-}
-
-var tables = await DatabaseInterrogator.GetTableInfoAsync(connectionString, "ApiSelfService");
-
-foreach (var table in tables)
-{
-    Console.WriteLine($"Table: {table.Name}, Schema: {table.SchemaName}, Type: {table.Type}, Row Count: {table.RowCount}");
-}
+var database = databases.FirstOrDefault(d => d.Name == "ApiSelfService");
+database!.Tables = await DatabaseInterrogator.GetTableInfoAsync(connectionString, "ApiSelfService");
+database.StoredProcedures = await DatabaseInterrogator.GetStoredProcedureInfoAsync(connectionString, "ApiSelfService");
 
 Console.WriteLine("");

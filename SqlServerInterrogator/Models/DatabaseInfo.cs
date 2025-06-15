@@ -22,4 +22,6 @@ public class DatabaseInfo
     public bool IsInStandby { get; set; }
     public bool IsBrokerEnabled { get; set; }
     public string? UserAccess { get; set; }
+    public List<TableInfo>? Tables { get; set; } = [];
+    public List<StoredProcedureInfo>? StoredProcedures { get; set; } = [];
 }
