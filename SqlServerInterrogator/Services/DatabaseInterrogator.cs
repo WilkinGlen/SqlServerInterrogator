@@ -5,17 +5,32 @@ using SqlServerInterrogator.Models;
 using SqlServerInterrogator.SqlScripts;
 using System.Runtime.CompilerServices;
 
+/// <summary>
+/// Provides functionality to retrieve detailed schema information from SQL Server databases.
+/// This includes information about tables, columns, keys, and indexes.
+/// </summary>
 public class DatabaseInterrogator
 {
+    /// <summary>
+    /// Retrieves detailed information about all tables in the specified database.
+    /// </summary>
+    /// <param name="connectionString">The connection string to the SQL Server instance.</param>
+    /// <param name="databaseName">The name of the database to interrogate.</param>
+    /// <param name="populateColumnKeysAndIndexes">When true, populates detailed column, key, and index information for each table. 
+    /// When false, only basic table information is retrieved, improving performance for large databases.</param>
+    /// <param name="cancellationToken">Optional token to cancel the operation.</param>
+    /// <returns>A list of <see cref="TableInfo"/> objects containing detailed table information.</returns>
     public static async Task<List<TableInfo>> GetTableInfoAsync(
         string connectionString,
         string databaseName,
+        bool populateColumnKeysAndIndexes = true,
         CancellationToken cancellationToken = default)
     {
         var tables = new List<TableInfo>();
         await foreach (var table in GetTableInfoEnumerableAsync(
             connectionString, 
             databaseName, 
+            populateColumnKeysAndIndexes,
             cancellationToken)
             .WithCancellation(cancellationToken))
         {
@@ -25,9 +40,24 @@ public class DatabaseInterrogator
         return tables;
     }
 
+    /// <summary>
+    /// Provides an asynchronous enumerable of table information from the specified database.
+    /// </summary>
+    /// <param name="connectionString">The connection string to the SQL Server instance.</param>
+    /// <param name="databaseName">The name of the database to interrogate.</param>
+    /// <param name="populateColumnKeysAndIndexes">When true, populates detailed column, key, and index information for each table. 
+    /// When false, only basic table information is retrieved, improving performance for large databases.</param>
+    /// <param name="cancellationToken">Token to cancel the operation.</param>
+    /// <returns>An asynchronous enumerable of <see cref="TableInfo"/> objects.</returns>
+    /// <remarks>
+    /// This method retrieves comprehensive information about each table. When <paramref name="populateColumnKeysAndIndexes"/> is true,
+    /// it includes columns, keys, and indexes by performing additional database queries. Setting this parameter to false will
+    /// significantly improve performance when detailed schema information is not needed.
+    /// </remarks>
     public static async IAsyncEnumerable<TableInfo> GetTableInfoEnumerableAsync(
         string connectionString,
         string databaseName,
+        bool populateColumnKeysAndIndexes = true,
         [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
         await using var connection = new SqlConnection(connectionString);
@@ -58,6 +88,12 @@ public class DatabaseInterrogator
                 RowCount = reader.GetInt64(reader.GetOrdinal("RowCount"))
             };
 
+            if(!populateColumnKeysAndIndexes)
+            {
+                yield return table;
+                continue;
+            }
+
             table.Columns = await GetColumnInfoAsync(
                 connectionString, 
                 databaseName, 
@@ -68,11 +104,24 @@ public class DatabaseInterrogator
                 databaseName, 
                 table.TableId, 
                 cancellationToken);
+            table.Indexes = await GetIndexInfoAsync(
+                connectionString, 
+                databaseName, 
+                table.TableId, 
+                cancellationToken);
 
             yield return table;
         }
     }
 
+    /// <summary>
+    /// Retrieves column information for a specific table.
+    /// </summary>
+    /// <param name="connectionString">The connection string to the SQL Server instance.</param>
+    /// <param name="databaseName">The name of the database containing the table.</param>
+    /// <param name="tableId">The ID of the table to query.</param>
+    /// <param name="cancellationToken">Optional token to cancel the operation.</param>
+    /// <returns>A list of <see cref="ColumnInfo"/> objects describing the table's columns.</returns>
     public static async Task<List<ColumnInfo>> GetColumnInfoAsync(
         string connectionString,
         string databaseName,
@@ -93,6 +142,14 @@ public class DatabaseInterrogator
         return columns;
     }
 
+    /// <summary>
+    /// Provides an asynchronous enumerable of column information for a specific table.
+    /// </summary>
+    /// <param name="connectionString">The connection string to the SQL Server instance.</param>
+    /// <param name="databaseName">The name of the database containing the table.</param>
+    /// <param name="tableId">The ID of the table to query.</param>
+    /// <param name="cancellationToken">Token to cancel the operation.</param>
+    /// <returns>An asynchronous enumerable of <see cref="ColumnInfo"/> objects.</returns>
     public static async IAsyncEnumerable<ColumnInfo> GetColumnInfoEnumerableAsync(
         string connectionString,
         string databaseName,
@@ -135,6 +192,14 @@ public class DatabaseInterrogator
         }
     }
 
+    /// <summary>
+    /// Retrieves key information (primary, foreign, unique) for a specific table.
+    /// </summary>
+    /// <param name="connectionString">The connection string to the SQL Server instance.</param>
+    /// <param name="databaseName">The name of the database containing the table.</param>
+    /// <param name="tableId">The ID of the table to query.</param>
+    /// <param name="cancellationToken">Optional token to cancel the operation.</param>
+    /// <returns>A list of <see cref="KeyInfo"/> objects describing the table's keys.</returns>
     public static async Task<List<KeyInfo>> GetKeyInfoAsync(
         string connectionString,
         string databaseName,
@@ -155,6 +220,14 @@ public class DatabaseInterrogator
         return keys;
     }
 
+    /// <summary>
+    /// Provides an asynchronous enumerable of key information for a specific table.
+    /// </summary>
+    /// <param name="connectionString">The connection string to the SQL Server instance.</param>
+    /// <param name="databaseName">The name of the database containing the table.</param>
+    /// <param name="tableId">The ID of the table to query.</param>
+    /// <param name="cancellationToken">Token to cancel the operation.</param>
+    /// <returns>An asynchronous enumerable of <see cref="KeyInfo"/> objects.</returns>
     public static async IAsyncEnumerable<KeyInfo> GetKeyInfoEnumerableAsync(
         string connectionString,
         string databaseName,
@@ -189,6 +262,81 @@ public class DatabaseInterrogator
                 IsSystemNamed = reader.GetBoolean(reader.GetOrdinal("IsSystemNamed")),
                 CreateDate = reader.GetDateTime(reader.GetOrdinal("CreateDate")),
                 ModifyDate = reader.GetDateTime(reader.GetOrdinal("ModifyDate"))
+            };
+        }
+    }
+
+    /// <summary>
+    /// Retrieves index information for a specific table.
+    /// </summary>
+    /// <param name="connectionString">The connection string to the SQL Server instance.</param>
+    /// <param name="databaseName">The name of the database containing the table.</param>
+    /// <param name="tableId">The ID of the table to query.</param>
+    /// <param name="cancellationToken">Optional token to cancel the operation.</param>
+    /// <returns>A list of <see cref="IndexInfo"/> objects describing the table's indexes.</returns>
+    public static async Task<List<IndexInfo>> GetIndexInfoAsync(
+        string connectionString,
+        string databaseName,
+        int tableId,
+        CancellationToken cancellationToken = default)
+    {
+        var indexes = new List<IndexInfo>();
+        await foreach (var index in GetIndexInfoEnumerableAsync(
+            connectionString, 
+            databaseName, 
+            tableId, 
+            cancellationToken)
+            .WithCancellation(cancellationToken))
+        {
+            indexes.Add(index);
+        }
+
+        return indexes;
+    }
+
+    /// <summary>
+    /// Provides an asynchronous enumerable of index information for a specific table.
+    /// </summary>
+    /// <param name="connectionString">The connection string to the SQL Server instance.</param>
+    /// <param name="databaseName">The name of the database containing the table.</param>
+    /// <param name="tableId">The ID of the table to query.</param>
+    /// <param name="cancellationToken">Token to cancel the operation.</param>
+    /// <returns>An asynchronous enumerable of <see cref="IndexInfo"/> objects.</returns>
+    public static async IAsyncEnumerable<IndexInfo> GetIndexInfoEnumerableAsync(
+        string connectionString,
+        string databaseName,
+        int tableId,
+        [EnumeratorCancellation] CancellationToken cancellationToken = default)
+    {
+        await using var connection = new SqlConnection(connectionString);
+        await connection.OpenAsync(cancellationToken);
+
+        var sql = $"USE [{databaseName}]; {DatabaseInterrogatorSqlScripts.GetIndexInfoEnumerableAsyncSql}";
+
+        await using var command = new SqlCommand(sql, connection);
+        _ = command.Parameters.AddWithValue("@TableId", tableId);
+
+        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+        while (await reader.ReadAsync(cancellationToken) && !cancellationToken.IsCancellationRequested)
+        {
+            if (cancellationToken.IsCancellationRequested)
+            {
+                yield break;
+            }
+
+            yield return new IndexInfo
+            {
+                IndexId = reader.GetInt32(reader.GetOrdinal("IndexId")),
+                Name = reader.GetString(reader.GetOrdinal("Name")),
+                Type = reader.GetByte(reader.GetOrdinal("Type")).ToString(),
+                TypeDesc = reader.GetString(reader.GetOrdinal("TypeDesc")),
+                IsPrimaryKey = reader.GetBoolean(reader.GetOrdinal("IsPrimaryKey")),
+                IsUnique = reader.GetBoolean(reader.GetOrdinal("IsUnique")),
+                IsDisabled = reader.GetBoolean(reader.GetOrdinal("IsDisabled")),
+                IsHypothetical = reader.GetBoolean(reader.GetOrdinal("IsHypothetical")),
+                CreateDate = reader.GetDateTime(reader.GetOrdinal("CreateDate")),
+                ModifyDate = reader.GetDateTime(reader.GetOrdinal("ModifyDate")),
+                RowCount = reader.GetInt64(reader.GetOrdinal("RowCount"))
             };
         }
     }

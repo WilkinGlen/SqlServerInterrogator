@@ -24,9 +24,9 @@ internal static class DatabaseInterrogatorSqlScripts
             t.modify_date AS ModifyDate,
             p.rows AS [RowCount]
         FROM sys.tables t
-        INNER JOIN sys.schemas s ON t.schema_id = s.schema_id
-        INNER JOIN sys.indexes i ON t.object_id = i.object_id
-        INNER JOIN sys.partitions p ON i.object_id = p.object_id AND i.index_id = p.index_id
+            INNER JOIN sys.schemas s ON t.schema_id = s.schema_id
+                INNER JOIN sys.indexes i ON t.object_id = i.object_id
+                    INNER JOIN sys.partitions p ON i.object_id = p.object_id AND i.index_id = p.index_id
         WHERE i.index_id <= 1
         ORDER BY s.name, t.name";
 
@@ -46,9 +46,9 @@ internal static class DatabaseInterrogatorSqlScripts
             c.column_id AS OrdinalPosition,
             dc.definition AS DefaultValue
         FROM sys.columns c
-        INNER JOIN sys.tables t ON c.object_id = t.object_id
-        INNER JOIN sys.types tp ON c.user_type_id = tp.user_type_id
-        LEFT JOIN sys.default_constraints dc ON c.default_object_id = dc.object_id
+            INNER JOIN sys.tables t ON c.object_id = t.object_id
+                INNER JOIN sys.types tp ON c.user_type_id = tp.user_type_id
+                    LEFT JOIN sys.default_constraints dc ON c.default_object_id = dc.object_id
         WHERE t.object_id = @TableId
         ORDER BY c.column_id";
 
@@ -66,7 +66,7 @@ internal static class DatabaseInterrogatorSqlScripts
             kc.create_date AS CreateDate,
             kc.modify_date AS ModifyDate
         FROM sys.tables t
-        INNER JOIN sys.key_constraints kc ON t.object_id = kc.parent_object_id
+            INNER JOIN sys.key_constraints kc ON t.object_id = kc.parent_object_id
         WHERE t.object_id = @TableId
         UNION ALL
         SELECT 
@@ -81,6 +81,27 @@ internal static class DatabaseInterrogatorSqlScripts
             fk.create_date AS CreateDate,
             fk.modify_date AS ModifyDate
         FROM sys.tables t
-        INNER JOIN sys.foreign_keys fk ON t.object_id = fk.parent_object_id
+            INNER JOIN sys.foreign_keys fk ON t.object_id = fk.parent_object_id
         WHERE t.object_id = @TableId;";
+
+    internal static string GetIndexInfoEnumerableAsyncSql =
+        @"
+        SELECT 
+            i.index_id AS IndexId,
+            i.name AS Name,
+            i.type AS Type,
+            i.type_desc AS TypeDesc,
+            i.is_primary_key AS IsPrimaryKey,
+            i.is_unique AS IsUnique,
+            i.is_disabled AS IsDisabled,
+            i.is_hypothetical AS IsHypothetical,
+            o.create_date AS CreateDate,
+            o.modify_date AS ModifyDate,
+            p.rows AS [RowCount]
+        FROM sys.indexes i
+            INNER JOIN sys.objects o ON i.object_id = o.object_id
+                INNER JOIN sys.partitions p ON i.object_id = p.object_id AND i.index_id = p.index_id
+        WHERE i.object_id = @TableId
+        AND i.index_id > 0  -- Skip heap (clustered index)
+        ORDER BY i.index_id;";
 }
