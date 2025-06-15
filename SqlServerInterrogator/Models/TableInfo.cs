@@ -16,5 +16,5 @@ public sealed class TableInfo
     public long RowCount { get; set; }
     public List<ColumnInfo>? Columns { get; set; } = [];
     public List<KeyInfo>? Keys { get; set; } = [];
-    public List<IndexInfo>? Indexes { get; set; } = new();
+    public List<IndexInfo>? Indexes { get; set; } = [];
 }

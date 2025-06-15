@@ -33,8 +33,8 @@ public class DatabaseInterrogator
     {
         var tables = new List<TableInfo>();
         await foreach (var table in GetTableInfoEnumerableAsync(
-            connectionString, 
-            databaseName, 
+            connectionString,
+            databaseName,
             populateColumnKeysAndIndexes,
             cancellationToken)
             .WithCancellation(cancellationToken))
@@ -93,26 +93,26 @@ public class DatabaseInterrogator
                 RowCount = reader.GetInt64(reader.GetOrdinal("RowCount"))
             };
 
-            if(!populateColumnKeysAndIndexes)
+            if (!populateColumnKeysAndIndexes)
             {
                 yield return table;
                 continue;
             }
 
             table.Columns = await GetColumnInfoAsync(
-                connectionString, 
-                databaseName, 
-                table.TableId, 
+                connectionString,
+                databaseName,
+                table.TableId,
                 cancellationToken);
             table.Keys = await GetKeyInfoAsync(
-                connectionString, 
-                databaseName, 
-                table.TableId, 
+                connectionString,
+                databaseName,
+                table.TableId,
                 cancellationToken);
             table.Indexes = await GetIndexInfoAsync(
-                connectionString, 
-                databaseName, 
-                table.TableId, 
+                connectionString,
+                databaseName,
+                table.TableId,
                 cancellationToken);
 
             yield return table;
@@ -135,9 +135,9 @@ public class DatabaseInterrogator
     {
         var columns = new List<ColumnInfo>();
         await foreach (var column in GetColumnInfoEnumerableAsync(
-            connectionString, 
-            databaseName, 
-            tableId, 
+            connectionString,
+            databaseName,
+            tableId,
             cancellationToken)
             .WithCancellation(cancellationToken))
         {
@@ -213,9 +213,9 @@ public class DatabaseInterrogator
     {
         var keys = new List<KeyInfo>();
         await foreach (var key in GetKeyInfoEnumerableAsync(
-            connectionString, 
-            databaseName, 
-            tableId, 
+            connectionString,
+            databaseName,
+            tableId,
             cancellationToken)
             .WithCancellation(cancellationToken))
         {
@@ -287,9 +287,9 @@ public class DatabaseInterrogator
     {
         var indexes = new List<IndexInfo>();
         await foreach (var index in GetIndexInfoEnumerableAsync(
-            connectionString, 
-            databaseName, 
-            tableId, 
+            connectionString,
+            databaseName,
+            tableId,
             cancellationToken)
             .WithCancellation(cancellationToken))
         {
@@ -360,8 +360,8 @@ public class DatabaseInterrogator
     {
         var procedures = new List<StoredProcedureInfo>();
         await foreach (var proc in GetStoredProcedureInfoEnumerableAsync(
-            connectionString, 
-            databaseName, 
+            connectionString,
+            databaseName,
             cancellationToken)
             .WithCancellation(cancellationToken))
         {
@@ -408,7 +408,7 @@ public class DatabaseInterrogator
 
         await using var command = new SqlCommand(sql, connection);
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
-        
+
         while (await reader.ReadAsync(cancellationToken) && !cancellationToken.IsCancellationRequested)
         {
             if (cancellationToken.IsCancellationRequested)
@@ -417,7 +417,7 @@ public class DatabaseInterrogator
             }
 
             var procId = reader.GetInt32(reader.GetOrdinal("ProcedureId"));
-            
+
             var procedure = new StoredProcedureInfo
             {
                 ProcedureId = procId,
@@ -432,8 +432,8 @@ public class DatabaseInterrogator
                     ? null
                     : reader.GetString(reader.GetOrdinal("Definition")),
                 Parameters = await GetStoredProcedureParametersAsync(
-                    connection, 
-                    procId, 
+                    connection,
+                    procId,
                     cancellationToken)
             };
 
@@ -466,11 +466,11 @@ public class DatabaseInterrogator
             ORDER BY p.parameter_id;";
 
         await using var command = new SqlCommand(sql, connection);
-        command.Parameters.AddWithValue("@ProcedureId", procedureId);
+        _ = command.Parameters.AddWithValue("@ProcedureId", procedureId);
 
         var parameters = new List<string>();
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
-        
+
         while (await reader.ReadAsync(cancellationToken))
         {
             var paramName = reader.GetString(reader.GetOrdinal("ParameterName"));
@@ -480,12 +480,12 @@ public class DatabaseInterrogator
             var scale = reader.GetByte(reader.GetOrdinal("Scale"));
 
             var parameterDefinition = $"{paramName} {dataType}";
-            
-            if (dataType == "varchar" || dataType == "nvarchar" || dataType == "char" || dataType == "nchar")
+
+            if (dataType is "varchar" or "nvarchar" or "char" or "nchar")
             {
                 parameterDefinition += maxLength == -1 ? "(MAX)" : $"({maxLength})";
             }
-            else if (dataType == "decimal" || dataType == "numeric")
+            else if (dataType is "decimal" or "numeric")
             {
                 parameterDefinition += $"({precision},{scale})";
             }
