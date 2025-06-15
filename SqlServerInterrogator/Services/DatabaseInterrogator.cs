@@ -20,6 +20,11 @@ public class DatabaseInterrogator
     /// When false, only basic table information is retrieved, improving performance for large databases.</param>
     /// <param name="cancellationToken">Optional token to cancel the operation.</param>
     /// <returns>A list of <see cref="TableInfo"/> objects containing detailed table information.</returns>
+    /// <remarks>
+    /// This method retrieves comprehensive information about each table. When <paramref name="populateColumnKeysAndIndexes"/> is true,
+    /// it includes columns, keys, and indexes by performing additional database queries. Setting this parameter to false will
+    /// significantly improve performance when detailed schema information is not needed.
+    /// </remarks>
     public static async Task<List<TableInfo>> GetTableInfoAsync(
         string connectionString,
         string databaseName,
