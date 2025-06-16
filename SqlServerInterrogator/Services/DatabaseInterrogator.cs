@@ -267,8 +267,8 @@ public class DatabaseInterrogator
                 IsSystemNamed = reader.GetBoolean(reader.GetOrdinal("IsSystemNamed")),
                 CreateDate = reader.GetDateTime(reader.GetOrdinal("CreateDate")),
                 ModifyDate = reader.GetDateTime(reader.GetOrdinal("ModifyDate")),
-                ReferencedTableSchema = reader.IsDBNull(reader.GetOrdinal("ReferencedTableSchema")) 
-                    ? null 
+                ReferencedTableSchema = reader.IsDBNull(reader.GetOrdinal("ReferencedTableSchema"))
+                    ? null
                     : reader.GetString(reader.GetOrdinal("ReferencedTableSchema")),
                 ReferencedTableName = reader.IsDBNull(reader.GetOrdinal("ReferencedTableName"))
                     ? null
