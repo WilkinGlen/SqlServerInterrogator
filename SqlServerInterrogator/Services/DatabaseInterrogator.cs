@@ -266,7 +266,16 @@ public class DatabaseInterrogator
                 IsForeignKey = reader.GetBoolean(reader.GetOrdinal("IsForeignKey")),
                 IsSystemNamed = reader.GetBoolean(reader.GetOrdinal("IsSystemNamed")),
                 CreateDate = reader.GetDateTime(reader.GetOrdinal("CreateDate")),
-                ModifyDate = reader.GetDateTime(reader.GetOrdinal("ModifyDate"))
+                ModifyDate = reader.GetDateTime(reader.GetOrdinal("ModifyDate")),
+                ReferencedTableSchema = reader.IsDBNull(reader.GetOrdinal("ReferencedTableSchema")) 
+                    ? null 
+                    : reader.GetString(reader.GetOrdinal("ReferencedTableSchema")),
+                ReferencedTableName = reader.IsDBNull(reader.GetOrdinal("ReferencedTableName"))
+                    ? null
+                    : reader.GetString(reader.GetOrdinal("ReferencedTableName")),
+                ReferencedColumnName = reader.IsDBNull(reader.GetOrdinal("ReferencedColumnName"))
+                    ? null
+                    : reader.GetString(reader.GetOrdinal("ReferencedColumnName"))
             };
         }
     }
