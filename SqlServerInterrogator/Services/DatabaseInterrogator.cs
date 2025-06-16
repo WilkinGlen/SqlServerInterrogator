@@ -399,21 +399,7 @@ public class DatabaseInterrogator
         await using var connection = new SqlConnection(connectionString);
         await connection.OpenAsync(cancellationToken);
 
-        var sql = $@"USE [{databaseName}];
-            SELECT 
-                p.object_id AS ProcedureId,
-                p.name AS Name,
-                s.name AS SchemaName,
-                p.type AS Type,
-                p.type_desc AS TypeDesc,
-                p.is_ms_shipped AS IsSystemObject,
-                p.create_date AS CreateDate,
-                p.modify_date AS ModifyDate,
-                m.definition AS Definition
-            FROM sys.procedures p
-                INNER JOIN sys.schemas s ON p.schema_id = s.schema_id
-                LEFT JOIN sys.sql_modules m ON p.object_id = m.object_id
-            ORDER BY s.name, p.name;";
+        var sql = $@"USE [{databaseName}]; {DatabaseInterrogatorSqlScripts.GetStoredProcedureInfoEnumerableAsyncSql}";
 
         await using var command = new SqlCommand(sql, connection);
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
@@ -462,17 +448,7 @@ public class DatabaseInterrogator
         int procedureId,
         CancellationToken cancellationToken)
     {
-        var sql = @"
-            SELECT 
-                p.name AS ParameterName,
-                t.name AS DataType,
-                p.max_length AS MaxLength,
-                p.precision AS Precision,
-                p.scale AS Scale
-            FROM sys.parameters p
-                INNER JOIN sys.types t ON p.user_type_id = t.user_type_id
-            WHERE p.object_id = @ProcedureId
-            ORDER BY p.parameter_id;";
+        var sql = DatabaseInterrogatorSqlScripts.GetStoredProcedureParametersAsyncSql;
 
         await using var command = new SqlCommand(sql, connection);
         _ = command.Parameters.AddWithValue("@ProcedureId", procedureId);

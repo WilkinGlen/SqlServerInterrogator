@@ -115,4 +115,32 @@ internal static class DatabaseInterrogatorSqlScripts
         WHERE i.object_id = @TableId
         AND i.index_id > 0  -- Skip heap (clustered index)
         ORDER BY i.index_id;";
+
+    internal const string GetStoredProcedureInfoEnumerableAsyncSql =
+        @"SELECT 
+                p.object_id AS ProcedureId,
+                p.name AS Name,
+                s.name AS SchemaName,
+                p.type AS Type,
+                p.type_desc AS TypeDesc,
+                p.is_ms_shipped AS IsSystemObject,
+                p.create_date AS CreateDate,
+                p.modify_date AS ModifyDate,
+                m.definition AS Definition
+            FROM sys.procedures p
+                INNER JOIN sys.schemas s ON p.schema_id = s.schema_id
+                LEFT JOIN sys.sql_modules m ON p.object_id = m.object_id
+            ORDER BY s.name, p.name;";
+
+    internal const string GetStoredProcedureParametersAsyncSql =
+        @"SELECT 
+                p.name AS ParameterName,
+                t.name AS DataType,
+                p.max_length AS MaxLength,
+                p.precision AS Precision,
+                p.scale AS Scale
+            FROM sys.parameters p
+                INNER JOIN sys.types t ON p.user_type_id = t.user_type_id
+            WHERE p.object_id = @ProcedureId
+            ORDER BY p.parameter_id;";
 }
