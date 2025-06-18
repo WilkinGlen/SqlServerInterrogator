@@ -8,6 +8,48 @@ using System.Threading.Tasks;
 
 public sealed class ServerInterrogator
 {
+    public static async Task<ServerInfo> GetServerInfoAsync(
+        string serverConnectionString,
+        CancellationToken cancellationToken = default)
+    {
+        using var connection = new SqlConnection(serverConnectionString);
+        await connection.OpenAsync(cancellationToken);
+
+        const string sql = ServerInterrogatorSqlScripts.GetServerInfoAsyncSql;
+
+        using var command = new SqlCommand(sql, connection);
+        using var reader = await command.ExecuteReaderAsync(cancellationToken);
+
+        if (!await reader.ReadAsync(cancellationToken))
+        {
+            throw new InvalidOperationException("No server information was returned");
+        }
+
+        return new ServerInfo
+        {
+            ServerName = reader.IsDBNull(reader.GetOrdinal("ServerName")) ? null :
+                reader.GetString(reader.GetOrdinal("ServerName")),
+            ProductVersion = reader.IsDBNull(reader.GetOrdinal("ProductVersion")) ? null :
+                reader.GetString(reader.GetOrdinal("ProductVersion")),
+            Edition = reader.IsDBNull(reader.GetOrdinal("Edition")) ? null :
+                reader.GetString(reader.GetOrdinal("Edition")),
+            ProductLevel = reader.IsDBNull(reader.GetOrdinal("ProductLevel")) ? null :
+                reader.GetString(reader.GetOrdinal("ProductLevel")),
+            IsClustered = reader.GetBoolean(reader.GetOrdinal("IsClustered")),
+            StartTime = reader.GetDateTime(reader.GetOrdinal("StartTime")),
+            Collation = reader.IsDBNull(reader.GetOrdinal("Collation")) ? null :
+                reader.GetString(reader.GetOrdinal("Collation")),
+            ProcessId = reader.GetInt32(reader.GetOrdinal("ProcessId")),
+            AuthenticationMode = reader.IsDBNull(reader.GetOrdinal("AuthenticationMode")) ? null :
+                reader.GetString(reader.GetOrdinal("AuthenticationMode")),
+            BuildClrVersion = reader.IsDBNull(reader.GetOrdinal("BuildClrVersion")) ? null :
+                reader.GetString(reader.GetOrdinal("BuildClrVersion")),
+            IsHadrEnabled = reader.GetBoolean(reader.GetOrdinal("IsHadrEnabled")),
+            HadrManagerStatus = reader.IsDBNull(reader.GetOrdinal("HadrManagerStatus")) ? null :
+                reader.GetString(reader.GetOrdinal("HadrManagerStatus"))
+        };
+    }
+
     public static async Task<List<DatabaseInfo>> GetDatabasesAsync(
         string serverConnectionString,
         CancellationToken cancellationToken = default)

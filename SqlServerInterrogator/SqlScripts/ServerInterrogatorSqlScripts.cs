@@ -30,10 +30,36 @@ internal static class ServerInterrogatorSqlScripts
             FROM sys.databases d
             LEFT JOIN sys.master_files mf ON d.database_id = mf.database_id
             LEFT JOIN msdb.dbo.backupset bs ON d.name = bs.database_name
+            WHERE d.database_id > 4  -- Excludes system databases (master=1, tempdb=2, model=3, msdb=4)
+            AND d.name NOT IN ('master', 'tempdb', 'model', 'msdb')  -- Additional safety check
             GROUP BY
                 d.database_id, d.name, d.owner_sid, d.create_date, d.collation_name,
                 d.recovery_model_desc, d.compatibility_level, d.is_read_only,
                 d.is_auto_close_on, d.is_auto_shrink_on, d.is_encrypted,
                 d.state_desc, d.is_in_standby,
                 d.is_broker_enabled, d.user_access_desc";
+
+    internal const string GetServerInfoAsyncSql =
+        @"SELECT 
+            SERVERPROPERTY('ServerName') AS ServerName,
+            SERVERPROPERTY('ProductVersion') AS ProductVersion,
+            SERVERPROPERTY('Edition') AS Edition,
+            SERVERPROPERTY('ProductLevel') AS ProductLevel,
+            CAST(COALESCE(SERVERPROPERTY('IsClustered'), 0) AS BIT) AS IsClustered,
+            sqlserver_start_time AS StartTime,
+            SERVERPROPERTY('Collation') AS Collation,
+            CAST(SERVERPROPERTY('ProcessID') AS INT) AS ProcessId,
+            CASE SERVERPROPERTY('IsIntegratedSecurityOnly')
+                WHEN 1 THEN 'Windows Authentication'
+                ELSE 'SQL Server and Windows Authentication'
+            END AS AuthenticationMode,
+            SERVERPROPERTY('BuildClrVersion') AS BuildClrVersion,
+            CAST(COALESCE(SERVERPROPERTY('IsHadrEnabled'), 0) AS BIT) AS IsHadrEnabled,
+            CASE SERVERPROPERTY('HadrManagerStatus')
+                WHEN 0 THEN 'Not started'
+                WHEN 1 THEN 'Started'
+                WHEN 2 THEN 'Not available'
+                ELSE NULL
+            END AS HadrManagerStatus
+        FROM sys.dm_os_sys_info";
 }
