@@ -437,6 +437,29 @@ public class DatabaseInterrogator
     }
 
     /// <summary>
+    /// Populates cross-reference collections for each table in the database that show relationships between tables
+    /// based on foreign key constraints.
+    /// </summary>
+    /// <param name="databaseInfo">The database information containing tables and their relationships.</param>
+    /// <remarks>
+    /// For each table, this method:
+    /// - Populates TablesWithForeignKeysToMe: Tables that have foreign keys referencing this table
+    /// - Populates TablesWithPrimaryKeysFromMe: Tables that this table references via foreign keys
+    /// 
+    /// This allows for easy navigation of table relationships in both directions (parent-to-child and child-to-parent).
+    /// </remarks>
+    public static void PopulateDatabaseForeignAndPrimaryTables(DatabaseInfo databaseInfo)
+    {
+        foreach (var table in databaseInfo.Tables)
+        {
+            table.TablesWithForeignKeysToMe =
+                [.. databaseInfo.Tables.Where(x => x.Keys.Any(k => k.ReferencedTableName == table.Name))];
+            table.TablesWithPrimaryKeysFromMe =
+                [.. databaseInfo.Tables.Where(primaryTable => table.Keys.Any(k => k.ReferencedTableName == primaryTable.Name))];
+        }
+    }
+
+    /// <summary>
     /// Retrieves the parameters for a specific stored procedure.
     /// </summary>
     /// <param name="connection">An open SQL connection.</param>
