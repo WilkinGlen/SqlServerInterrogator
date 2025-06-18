@@ -7,7 +7,7 @@ var connectionString = "Server=localhost;Integrated Security=True;TrustServerCer
 
 var serverInfo = await ServerInterrogator.GetServerInfoAsync(connectionString, CancellationToken.None);
 
-await foreach(var db in ServerInterrogator.GetDatabasesEnumerableAsync(connectionString, CancellationToken.None))
+await foreach (var db in ServerInterrogator.GetDatabasesEnumerableAsync(connectionString, CancellationToken.None))
 {
     serverInfo.Databases.Add(db);
 }

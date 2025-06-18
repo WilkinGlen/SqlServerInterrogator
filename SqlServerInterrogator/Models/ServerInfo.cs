@@ -14,5 +14,5 @@ public sealed class ServerInfo
     public string? BuildClrVersion { get; set; }
     public bool IsHadrEnabled { get; set; }
     public string? HadrManagerStatus { get; set; }
-    public List<DatabaseInfo> Databases { get; set; } = new List<DatabaseInfo>();
+    public List<DatabaseInfo> Databases { get; set; } = [];
 }
