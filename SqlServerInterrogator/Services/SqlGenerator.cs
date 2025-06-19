@@ -109,11 +109,9 @@ public class SqlGenerator
                 if (!usedTables.Contains(table.TableId))
                 {
                     _ = sql.AppendLine($"LEFT JOIN [{firstColumn.DatabaseInfo.Name}].[dbo].[{table.Name}] AS t{table.TableId}");
-
                     // Generate the join condition based on the found key
                     var joinCondition = GenerateJoinCondition(joinKey!, joinPath.Tables[i - 1].Table, table);
                     _ = sql.AppendLine($"    ON {joinCondition}");
-
                     _ = usedTables.Add(table.TableId);
                 }
             }
@@ -156,12 +154,13 @@ public class SqlGenerator
             {
                 return currentPath;
             }
-
             // Find all tables we can join to from here
             foreach (var nextTable in allTables)
             {
                 if (visited.Contains(nextTable.TableId))
+                {
                     continue;
+                }
 
                 var joinKey = FindJoinKey(currentTable, nextTable);
                 if (joinKey != null)
@@ -196,10 +195,10 @@ public class SqlGenerator
         var sourceToTarget = source.Keys
             .FirstOrDefault(k => k.IsForeignKey &&
                 string.Equals(k.ReferencedTableName, target.Name, StringComparison.OrdinalIgnoreCase));
-
         if (sourceToTarget != null)
+        {
             return sourceToTarget;
-
+        }
         // Check foreign keys in the target table pointing to the source
         return target.Keys
             .FirstOrDefault(k => k.IsForeignKey &&

@@ -70,7 +70,6 @@ public class GenerateSelectStatement_Should
                 }
             ]
         };
-
         var table2 = new TableInfo
         {
             TableId = 2,
@@ -104,7 +103,6 @@ public class GenerateSelectStatement_Should
             Name = "TestDatabase",
             Tables = [table1, table2]
         };
-
         var columnsToSelect = new List<ColumnToSelect>
         {
             new() {
@@ -148,7 +146,6 @@ public class GenerateSelectStatement_Should
                 }
             ]
         };
-
         var table3 = new TableInfo
         {
             TableId = 3,
@@ -170,7 +167,6 @@ public class GenerateSelectStatement_Should
                 }
             ]
         };
-
         var table2 = new TableInfo
         {
             TableId = 2,
@@ -215,7 +211,6 @@ public class GenerateSelectStatement_Should
             Name = "TestDatabase",
             Tables = [table1, table2, table3]
         };
-
         var columnsToSelect = new List<ColumnToSelect>
         {
             new() {
@@ -259,7 +254,6 @@ public class GenerateSelectStatement_Should
                 }
             ]
         };
-
         var table2 = new TableInfo
         {
             TableId = 2,
@@ -292,7 +286,6 @@ public class GenerateSelectStatement_Should
                 }
             ]
         };
-
         var table3 = new TableInfo
         {
             TableId = 3,
@@ -324,7 +317,6 @@ public class GenerateSelectStatement_Should
                 }
             ]
         };
-
         var table4 = new TableInfo
         {
             TableId = 4,
@@ -360,7 +352,6 @@ public class GenerateSelectStatement_Should
             Name = "TestDatabase",
             Tables = [table1, table2, table3, table4]
         };
-
         var columnsToSelect = new List<ColumnToSelect>
         {
             new() {
@@ -402,7 +393,6 @@ public class GenerateSelectStatement_Should
             ],
             Keys = []
         };
-
         var table2 = new TableInfo
         {
             TableId = 2,
@@ -423,7 +413,6 @@ public class GenerateSelectStatement_Should
             Name = "TestDatabase",
             Tables = [table1, table2]
         };
-
         var columnsToSelect = new List<ColumnToSelect>
         {
             new() {
@@ -467,7 +456,6 @@ public class GenerateSelectStatement_Should
             Name = "TestDatabase",
             Tables = [new TableInfo { TableId = 1, Name = "TestTable" }]
         };
-
         var columnsToSelect = new List<ColumnToSelect>
         {
             new() {
@@ -502,7 +490,6 @@ public class GenerateSelectStatement_Should
                 }
             ]
         };
-
         var columnsToSelect = new List<ColumnToSelect>
         {
             new()
@@ -536,7 +523,6 @@ public class GenerateSelectStatement_Should
                 }
             ]
         };
-
         var columnsToSelect = new List<ColumnToSelect>
         {
             new() {
@@ -572,7 +558,6 @@ public class GenerateSelectStatement_Should
                 }
             ]
         };
-
         var columnsToSelect = new List<ColumnToSelect>
         {
             new() {
