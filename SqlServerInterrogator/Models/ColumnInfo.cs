@@ -14,6 +14,6 @@ public sealed class ColumnInfo
     public int Precision { get; set; }
     public int Scale { get; set; }
     public string? Description { get; set; }
-    public int TableId { get; internal set; }
-    public int OrdinalPosition { get; internal set; }
+    public int TableId { get; set; }
+    public int OrdinalPosition { get; set; }
 }

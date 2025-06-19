@@ -12,8 +12,8 @@ public sealed class KeyInfo
     public bool IsDisabled { get; set; }
     public DateTime CreateDate { get; set; }
     public DateTime ModifyDate { get; set; }
-    public int TableId { get; internal set; }
-    public bool IsSystemNamed { get; internal set; }
+    public int TableId { get; set; }
+    public bool IsSystemNamed { get; set; }
     public string? ReferencedTableSchema { get; set; }
     public string? ReferencedTableName { get; set; }
     public string? ReferencedColumnName { get; set; }
