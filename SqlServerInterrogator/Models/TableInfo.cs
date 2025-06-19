@@ -17,6 +17,5 @@ public sealed class TableInfo
     public List<ColumnInfo> Columns { get; set; } = [];
     public List<KeyInfo> Keys { get; set; } = [];
     public List<IndexInfo> Indexes { get; set; } = [];
-    public List<TableInfo> TablesWithForeignKeysToMe { get; set; } = [];
-    public List<TableInfo> TablesWithPrimaryKeysFromMe { get; set; } = [];
+    public List<TableInfo> TablesICanJoinTo { get; set; } = [];
 }

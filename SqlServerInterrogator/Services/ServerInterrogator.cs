@@ -26,12 +26,12 @@ public sealed class ServerInterrogator
         foreach (var database in databases)
         {
             database.Tables = await DatabaseInterrogator.GetTableInfoAsync(
-                serverConnectionString, 
-                database.Name!, 
+                serverConnectionString,
+                database.Name!,
                 cancellationToken: CancellationToken.None);
             database.StoredProcedures = await DatabaseInterrogator.GetStoredProcedureInfoAsync(
-                serverConnectionString, 
-                database.Name!, 
+                serverConnectionString,
+                database.Name!,
                 CancellationToken.None);
             DatabaseInterrogator.PopulateDatabaseForeignAndPrimaryTables(database);
         }

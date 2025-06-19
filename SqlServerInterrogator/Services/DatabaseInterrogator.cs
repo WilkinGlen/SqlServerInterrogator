@@ -437,25 +437,68 @@ public class DatabaseInterrogator
     }
 
     /// <summary>
-    /// Populates cross-reference collections for each table in the database that show relationships between tables
-    /// based on foreign key constraints.
+    /// Populates table join relationships for each table in the database by analyzing direct and indirect
+    /// foreign key relationships between tables.
     /// </summary>
     /// <param name="databaseInfo">The database information containing tables and their relationships.</param>
     /// <remarks>
     /// For each table, this method:
-    /// - Populates TablesWithForeignKeysToMe: Tables that have foreign keys referencing this table
-    /// - Populates TablesWithPrimaryKeysFromMe: Tables that this table references via foreign keys
+    /// 1. Finds direct relationships by identifying:
+    ///    - Tables that have foreign keys pointing to this table
+    ///    - Tables that this table points to via foreign keys
+    /// 2. Finds indirect relationships by recursively traversing the table relationships
     /// 
-    /// This allows for easy navigation of table relationships in both directions (parent-to-child and child-to-parent).
+    /// All relationships are stored in the TablesICanJoinTo collection of each table,
+    /// enabling navigation through both direct and indirect table relationships.
+    /// Duplicate relationships are automatically removed.
     /// </remarks>
     public static void PopulateDatabaseForeignAndPrimaryTables(DatabaseInfo databaseInfo)
     {
         foreach (var table in databaseInfo.Tables)
         {
-            table.TablesWithForeignKeysToMe =
+            table.TablesICanJoinTo =
                 [.. databaseInfo.Tables.Where(x => x.Keys.Any(k => k.ReferencedTableName == table.Name))];
-            table.TablesWithPrimaryKeysFromMe =
-                [.. databaseInfo.Tables.Where(primaryTable => table.Keys.Any(k => k.ReferencedTableName == primaryTable.Name))];
+            table.TablesICanJoinTo.AddRange(
+                [.. databaseInfo.Tables.Where(primaryTable => table.Keys.Any(k => k.ReferencedTableName == primaryTable.Name))]);
+        }
+
+        foreach (var table in databaseInfo.Tables)
+        {
+            table.TablesICanJoinTo.AddRange(GetIndirectTablesICanJoinTo(table));
+            table.TablesICanJoinTo = [.. table.TablesICanJoinTo.Distinct()];
+        }
+    }
+
+    private static List<TableInfo> GetIndirectTablesICanJoinTo(TableInfo table)
+    {
+        List<TableInfo> checkedTables = [];
+        List<TableInfo> indirectTables = [];
+        processTablesICanLinkTo(table);
+
+        return indirectTables;
+
+        void processTablesICanLinkTo(TableInfo currentTable)
+        {
+            if (checkedTables.Contains(currentTable))
+            {
+                return;
+            }
+
+            if (currentTable.TablesICanJoinTo.Count == 0)
+            {
+                return;
+            }
+
+            checkedTables.Add(currentTable);
+            foreach (var linkedTable in currentTable.TablesICanJoinTo)
+            {
+                if (!indirectTables.Contains(linkedTable))
+                {
+                    indirectTables.Add(linkedTable);
+                }
+
+                processTablesICanLinkTo(linkedTable);
+            }
         }
     }
 
