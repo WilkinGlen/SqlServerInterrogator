@@ -38,31 +38,30 @@ public class SqlGenerator
     }
 
     /// <summary>
-    /// Generates a SQL SELECT statement based on the specified columns to select.
+    /// Generates a SQL SELECT statement based on the specified columns and database information.
     /// Automatically determines and includes necessary table joins based on foreign key relationships.
     /// </summary>
-    /// <param name="columnsToSelect">Collection of columns to include in the SELECT statement. Each column must include both column and database metadata.</param>
+    /// <param name="columns">Collection of columns to include in the SELECT statement.</param>
+    /// <param name="databaseInfo">Database metadata containing table and relationship information.</param>
     /// <returns>A complete SQL SELECT statement string with proper joins and aliasing, or empty string if no valid columns are provided.</returns>
     /// <exception cref="InvalidOperationException">Thrown when no valid join path can be found between tables containing the selected columns.</exception>
     /// <remarks>
     /// The method performs the following steps:
-    /// 1. Validates input columns and filters out invalid entries
+    /// 1. Validates input columns and database info
     /// 2. Determines the main (first) table and creates proper table aliases
     /// 3. Analyzes required joins based on column table relationships
     /// 4. Generates optimized join paths using foreign key metadata
     /// 5. Produces a fully-qualified SQL statement with proper syntax
     /// </remarks>
-    public static string GenerateSelectStatement(IEnumerable<ColumnToSelect> columnsToSelect)
+    public static string GenerateSelectStatement(IEnumerable<ColumnInfo> columns, DatabaseInfo databaseInfo)
     {
-        if (columnsToSelect == null || !columnsToSelect.Any())
+        if (columns == null || !columns.Any() || databaseInfo == null)
         {
-            return string.Empty;
+            throw new ArgumentException("Columns and database information must be provided.");
         }
 
-        // Filter out null items and items with null ColumnInfo before processing
-        var validColumns = columnsToSelect
-            .Where(c => c != null && c.ColumnInfo != null && c.DatabaseInfo != null)
-            .ToList();
+        // Filter out null columns before processing
+        var validColumns = columns.Where(c => c != null).ToList();
 
         if (validColumns.Count == 0)
         {
@@ -72,21 +71,20 @@ public class SqlGenerator
         var firstColumn = validColumns.First();
 
         // Group columns by their table IDs
-        var columnsByTable = validColumns
-            .GroupBy(c => c.ColumnInfo!.TableId);
+        var columnsByTable = validColumns.GroupBy(c => c.TableId);
 
         // Get the main table (from first column)
-        var mainTable = firstColumn.DatabaseInfo!.Tables.First(t => t.TableId == firstColumn.ColumnInfo!.TableId);
+        var mainTable = databaseInfo.Tables.First(t => t.TableId == firstColumn.TableId);
         var usedTables = new HashSet<int> { mainTable.TableId };
 
         // Build column selections with table aliases
         var columnSelections = validColumns
-            .Select(c => $"t{c.ColumnInfo!.TableId}.[{c.ColumnInfo.Name}]");
+            .Select(c => $"t{c.TableId}.[{c.Name}]");
 
         // Start building the SQL
         var sql = new System.Text.StringBuilder();
         _ = sql.AppendLine($"SELECT {string.Join(", ", columnSelections)}");
-        _ = sql.AppendLine($"FROM [{firstColumn.DatabaseInfo.Name}].[dbo].[{mainTable.Name}] AS t{mainTable.TableId}");
+        _ = sql.AppendLine($"FROM [{databaseInfo.Name}].[dbo].[{mainTable.Name}] AS t{mainTable.TableId}");
 
         // Build necessary joins
         foreach (var tableGroup in columnsByTable)
@@ -96,9 +94,9 @@ public class SqlGenerator
                 continue;
             }
 
-            var targetTable = firstColumn.DatabaseInfo.Tables.First(t => t.TableId == tableGroup.Key);
+            var targetTable = databaseInfo.Tables.First(t => t.TableId == tableGroup.Key);
             var joinPath =
-                FindJoinPath(mainTable, targetTable, firstColumn.DatabaseInfo.Tables) ??
+                FindJoinPath(mainTable, targetTable, databaseInfo.Tables) ??
                 throw new InvalidOperationException($"No join path found between tables {mainTable.Name} and {targetTable.Name}");
 
             // Skip the first table as it's our main table
@@ -108,7 +106,7 @@ public class SqlGenerator
 
                 if (!usedTables.Contains(table.TableId))
                 {
-                    _ = sql.AppendLine($"LEFT JOIN [{firstColumn.DatabaseInfo.Name}].[dbo].[{table.Name}] AS t{table.TableId}");
+                    _ = sql.AppendLine($"LEFT JOIN [{databaseInfo.Name}].[dbo].[{table.Name}] AS t{table.TableId}");
                     // Generate the join condition based on the found key
                     var joinCondition = GenerateJoinCondition(joinKey!, joinPath.Tables[i - 1].Table, table);
                     _ = sql.AppendLine($"    ON {joinCondition}");

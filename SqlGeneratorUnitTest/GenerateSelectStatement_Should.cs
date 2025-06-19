@@ -27,19 +27,10 @@ public class GenerateSelectStatement_Should
                 }
             ]
         };
-        var columnsToSelect = new List<ColumnToSelect>
-        {
-            new() {
-                DatabaseInfo = databaseInfo,
-                ColumnInfo = databaseInfo.Tables[0].Columns[0]
-            },
-            new() {
-                DatabaseInfo = databaseInfo,
-                ColumnInfo = databaseInfo.Tables[0].Columns[1]
-            }
-        };
 
-        var sql = SqlGenerator.GenerateSelectStatement(columnsToSelect);
+        var columnsToSelect = databaseInfo.Tables[0].Columns;
+
+        var sql = SqlGenerator.GenerateSelectStatement(columnsToSelect, databaseInfo);
 
         _ = sql.Should().Be(expectedSql);
     }
@@ -103,19 +94,14 @@ public class GenerateSelectStatement_Should
             Name = "TestDatabase",
             Tables = [table1, table2]
         };
-        var columnsToSelect = new List<ColumnToSelect>
+
+        var columnsToSelect = new List<ColumnInfo>
         {
-            new() {
-                DatabaseInfo = databaseInfo,
-                ColumnInfo = databaseInfo.Tables[0].Columns[0]
-            },
-            new() {
-                DatabaseInfo = databaseInfo,
-                ColumnInfo = databaseInfo.Tables[1].Columns[0]
-            }
+            table1.Columns[0],  // Column1 from Table1
+            table2.Columns[0]   // Column2 from Table2
         };
 
-        var sql = SqlGenerator.GenerateSelectStatement(columnsToSelect);
+        var sql = SqlGenerator.GenerateSelectStatement(columnsToSelect, databaseInfo);
 
         _ = sql.Should().Be(expectedSql);
     }
@@ -211,19 +197,14 @@ public class GenerateSelectStatement_Should
             Name = "TestDatabase",
             Tables = [table1, table2, table3]
         };
-        var columnsToSelect = new List<ColumnToSelect>
+
+        var columnsToSelect = new List<ColumnInfo>
         {
-            new() {
-                DatabaseInfo = databaseInfo,
-                ColumnInfo = databaseInfo.Tables[0].Columns[0]  // Column1 from Table1
-            },
-            new() {
-                DatabaseInfo = databaseInfo,
-                ColumnInfo = databaseInfo.Tables[2].Columns[0]  // Column3 from Table3
-            }
+            databaseInfo.Tables[0].Columns[0],  // Column1 from Table1
+            databaseInfo.Tables[2].Columns[0]   // Column3 from Table3
         };
 
-        var sql = SqlGenerator.GenerateSelectStatement(columnsToSelect);
+        var sql = SqlGenerator.GenerateSelectStatement(columnsToSelect, databaseInfo);
 
         _ = sql.Should().Be(expectedSql);
     }
@@ -352,32 +333,64 @@ public class GenerateSelectStatement_Should
             Name = "TestDatabase",
             Tables = [table1, table2, table3, table4]
         };
-        var columnsToSelect = new List<ColumnToSelect>
+
+        var columnsToSelect = new List<ColumnInfo>
         {
-            new() {
-                DatabaseInfo = databaseInfo,
-                ColumnInfo = databaseInfo.Tables[0].Columns[0]  // Column1 from Table1
-            },
-            new() {
-                DatabaseInfo = databaseInfo,
-                ColumnInfo = databaseInfo.Tables[1].Columns[0]  // Column2 from Table2
-            },
-            new() {
-                DatabaseInfo = databaseInfo,
-                ColumnInfo = databaseInfo.Tables[3].Columns[0]  // Column4 from Table4
-            }
+            databaseInfo.Tables[0].Columns[0],  // Column1 from Table1
+            databaseInfo.Tables[1].Columns[0],  // Column2 from Table2
+            databaseInfo.Tables[3].Columns[0]   // Column4 from Table4
         };
 
-        var sql = SqlGenerator.GenerateSelectStatement(columnsToSelect);
+        var sql = SqlGenerator.GenerateSelectStatement(columnsToSelect, databaseInfo);
 
         _ = sql.Should().Be(expectedSql);
     }
 
     [Fact]
-    public void ReturnEmptyString_WhenNoColumnsToSelectProvided()
+    public void ThrowArgumentException_WhenNoColumnsToSelectProvided()
     {
-        var sql = SqlGenerator.GenerateSelectStatement([]);
-        _ = sql.Should().Be(string.Empty);
+        var databaseInfo = new DatabaseInfo
+        {
+            Name = "TestDatabase",
+            Tables = []
+        };
+        
+        var action = () => SqlGenerator.GenerateSelectStatement([], databaseInfo);
+
+        _ = action.Should()
+            .Throw<ArgumentException>()
+            .WithMessage("Columns and database information must be provided.");
+    }
+
+    [Fact]
+    public void ThrowArgumentException_WhenColumnsToSelectIsNull()
+    {
+        var databaseInfo = new DatabaseInfo
+        {
+            Name = "TestDatabase",
+            Tables = []
+        };
+        
+        var action = () => SqlGenerator.GenerateSelectStatement(null!, databaseInfo);
+
+        _ = action.Should()
+            .Throw<ArgumentException>()
+            .WithMessage("Columns and database information must be provided.");
+    }
+
+    [Fact]
+    public void ThrowArgumentException_WhenDatabaseInfoIsNull()
+    {
+        var columns = new List<ColumnInfo>
+        {
+            new() { ColumnId = 1, Name = "Column1", TableId = 1 }
+        };
+
+        var action = () => SqlGenerator.GenerateSelectStatement(columns, null!);
+
+        _ = action.Should()
+            .Throw<ArgumentException>()
+            .WithMessage("Columns and database information must be provided.");
     }
 
     [Fact]
@@ -413,60 +426,18 @@ public class GenerateSelectStatement_Should
             Name = "TestDatabase",
             Tables = [table1, table2]
         };
-        var columnsToSelect = new List<ColumnToSelect>
+
+        var columnsToSelect = new List<ColumnInfo>
         {
-            new() {
-                DatabaseInfo = databaseInfo,
-                ColumnInfo = databaseInfo.Tables[0].Columns[0]  // Column1 from Table1
-            },
-            new() {
-                DatabaseInfo = databaseInfo,
-                ColumnInfo = databaseInfo.Tables[1].Columns[0]  // Column2 from Table2
-            }
+            table1.Columns[0],  // Column1 from Table1
+            table2.Columns[0]   // Column2 from Table2
         };
 
-        var action = () => SqlGenerator.GenerateSelectStatement(columnsToSelect);
+        var action = () => SqlGenerator.GenerateSelectStatement(columnsToSelect, databaseInfo);
 
         _ = action.Should()
             .Throw<InvalidOperationException>()
             .WithMessage("No join path found between tables Table1 and Table2");
-    }
-
-    [Fact]
-    public void ReturnEmptyString_WhenFirstColumnHasNoDatabaseInfo()
-    {
-        var columnsToSelect = new List<ColumnToSelect>
-        {
-            new() {
-                DatabaseInfo = null,
-                ColumnInfo = new ColumnInfo { ColumnId = 1, Name = "Column1", TableId = 1 }
-            }
-        };
-
-        var sql = SqlGenerator.GenerateSelectStatement(columnsToSelect);
-
-        _ = sql.Should().Be(string.Empty);
-    }
-
-    [Fact]
-    public void ReturnEmptyString_WhenFirstColumnHasNoColumnInfo()
-    {
-        var databaseInfo = new DatabaseInfo
-        {
-            Name = "TestDatabase",
-            Tables = [new TableInfo { TableId = 1, Name = "TestTable" }]
-        };
-        var columnsToSelect = new List<ColumnToSelect>
-        {
-            new() {
-                DatabaseInfo = databaseInfo,
-                ColumnInfo = null
-            }
-        };
-
-        var sql = SqlGenerator.GenerateSelectStatement(columnsToSelect);
-
-        _ = sql.Should().Be(string.Empty);
     }
 
     [Fact]
@@ -490,21 +461,65 @@ public class GenerateSelectStatement_Should
                 }
             ]
         };
-        var columnsToSelect = new List<ColumnToSelect>
+        var columnsToSelect = new List<ColumnInfo>
         {
-            new()
-            {
-                DatabaseInfo = databaseInfo,
-                ColumnInfo = databaseInfo.Tables[0].Columns[0]
-            },
-            // Add null items after the valid column
-            null!,
-            new() { DatabaseInfo = databaseInfo, ColumnInfo = null }
+            databaseInfo.Tables[0].Columns[0],
+            null!
         };
 
-        var sql = SqlGenerator.GenerateSelectStatement(columnsToSelect);
+        var sql = SqlGenerator.GenerateSelectStatement(columnsToSelect, databaseInfo);
 
         _ = sql.Should().Be(expectedSql);
+    }
+
+    [Fact]
+    public void HandleDuplicateColumns_InColumnList()
+    {
+        const string expectedSql = "SELECT t1.[Column1], t1.[Column1]\r\nFROM [TestDatabase].[dbo].[TestTable] AS t1\r\n";
+        var databaseInfo = new DatabaseInfo
+        {
+            Name = "TestDatabase",
+            Tables =
+            [
+                new TableInfo
+                {
+                    TableId = 1,
+                    Name = "TestTable",
+                    Columns =
+                    [
+                        new ColumnInfo { ColumnId = 1, Name = "Column1", TableId = 1 }
+                    ],
+                    Keys = []
+                }
+            ]
+        };
+        var columnsToSelect = new List<ColumnInfo>
+        {
+            databaseInfo.Tables[0].Columns[0],
+            databaseInfo.Tables[0].Columns[0]  // Same column twice
+        };
+
+        var sql = SqlGenerator.GenerateSelectStatement(columnsToSelect, databaseInfo);
+
+        _ = sql.Should().Be(expectedSql);
+    }
+
+    [Fact]
+    public void HandleEmptyTables_InDatabaseInfo()
+    {
+        var databaseInfo = new DatabaseInfo
+        {
+            Name = "TestDatabase",
+            Tables = []
+        };
+        var columnsToSelect = new List<ColumnInfo>
+        {
+            new() { ColumnId = 1, Name = "Column1", TableId = 1 }
+        };
+
+        var action = () => SqlGenerator.GenerateSelectStatement(columnsToSelect, databaseInfo);
+
+        _ = action.Should().Throw<InvalidOperationException>();
     }
 
     [Fact]
@@ -523,15 +538,12 @@ public class GenerateSelectStatement_Should
                 }
             ]
         };
-        var columnsToSelect = new List<ColumnToSelect>
+        var columnsToSelect = new List<ColumnInfo>
         {
-            new() {
-                DatabaseInfo = databaseInfo,
-                ColumnInfo = new ColumnInfo { ColumnId = 2, Name = "Column2", TableId = 2 }  // TableId doesn't exist
-            }
+            new() { ColumnId = 2, Name = "Column2", TableId = 2 }  // TableId doesn't exist
         };
 
-        var action = () => SqlGenerator.GenerateSelectStatement(columnsToSelect);
+        var action = () => SqlGenerator.GenerateSelectStatement(columnsToSelect, databaseInfo);
 
         _ = action.Should()
             .Throw<InvalidOperationException>();
@@ -558,19 +570,45 @@ public class GenerateSelectStatement_Should
                 }
             ]
         };
-        var columnsToSelect = new List<ColumnToSelect>
+        var columnsToSelect = new List<ColumnInfo>
         {
-            new() {
-                DatabaseInfo = databaseInfo,
-                ColumnInfo = databaseInfo.Tables[0].Columns[0]
-            },
-            new() {
-                DatabaseInfo = databaseInfo,
-                ColumnInfo = databaseInfo.Tables[0].Columns[1]
-            }
+            databaseInfo.Tables[0].Columns[0],
+            databaseInfo.Tables[0].Columns[1]
         };
 
-        var sql = SqlGenerator.GenerateSelectStatement(columnsToSelect);
+        var sql = SqlGenerator.GenerateSelectStatement(columnsToSelect, databaseInfo);
+
+        _ = sql.Should().Be(expectedSql);
+    }
+
+    [Fact]
+    public void HandleWhitespaceInNames()
+    {
+        const string expectedSql = "SELECT t1.[Column Name], t1.[Table Column]\r\nFROM [Test Database].[dbo].[Test Table] AS t1\r\n";
+        var databaseInfo = new DatabaseInfo
+        {
+            Name = "Test Database",
+            Tables =
+            [
+                new TableInfo
+                {
+                    TableId = 1,
+                    Name = "Test Table",
+                    Columns =
+                    [
+                        new ColumnInfo { ColumnId = 1, Name = "Column Name", TableId = 1 },
+                        new ColumnInfo { ColumnId = 2, Name = "Table Column", TableId = 1 }
+                    ]
+                }
+            ]
+        };
+        var columnsToSelect = new List<ColumnInfo>
+        {
+            databaseInfo.Tables[0].Columns[0],
+            databaseInfo.Tables[0].Columns[1]
+        };
+
+        var sql = SqlGenerator.GenerateSelectStatement(columnsToSelect, databaseInfo);
 
         _ = sql.Should().Be(expectedSql);
     }
