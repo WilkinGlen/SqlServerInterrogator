@@ -9,7 +9,7 @@ public class GenerateSelectStatement_Should
     [Fact]
     public void GenerateCorrectSql_WhenAllColumnsToSelectAreInSameTable()
     {
-        const string expectedSql = "SELECT t1.[Column1], t1.[Column2]\r\nFROM [TestDatabase].[dbo].[TestTable] AS t1\r\n";
+        const string expectedSql = "USE [TestDatabase];\r\nSELECT t1.[Column1], t1.[Column2]\r\nFROM [TestDatabase].[dbo].[TestTable] AS t1\r\n";
         var databaseInfo = new DatabaseInfo
         {
             Name = "TestDatabase",
@@ -38,7 +38,7 @@ public class GenerateSelectStatement_Should
     [Fact]
     public void GenerateCorrectSql_WhenColumnsToSelectAreInDifferentTables_ThatCanBeJoinedDirectly()
     {
-        const string expectedSql = "SELECT t1.[Column1], t2.[Column2]\r\nFROM [TestDatabase].[dbo].[Table1] AS t1\r\nLEFT JOIN [TestDatabase].[dbo].[Table2] AS t2\r\n    ON t1.[Key] = t2.[ForeignKey]\r\n";
+        const string expectedSql = "USE [TestDatabase];\r\nSELECT t1.[Column1], t2.[Column2]\r\nFROM [TestDatabase].[dbo].[Table1] AS t1\r\nLEFT JOIN [TestDatabase].[dbo].[Table2] AS t2\r\n    ON t1.[Key] = t2.[ForeignKey]\r\n";
 
         var table1 = new TableInfo
         {
@@ -109,7 +109,7 @@ public class GenerateSelectStatement_Should
     [Fact]
     public void GenerateCorrectSql_WhenColumnsToSelectAreInDifferentTables_ThatMustBeJoinedIndirectly()
     {
-        const string expectedSql = "SELECT t1.[Column1], t3.[Column3]\r\nFROM [TestDatabase].[dbo].[Table1] AS t1\r\nLEFT JOIN [TestDatabase].[dbo].[Table2] AS t2\r\n    ON t1.[Key1] = t2.[ForeignKey1]\r\nLEFT JOIN [TestDatabase].[dbo].[Table3] AS t3\r\n    ON t2.[ForeignKey3] = t3.[Key3]\r\n";
+        const string expectedSql = "USE [TestDatabase];\r\nSELECT t1.[Column1], t3.[Column3]\r\nFROM [TestDatabase].[dbo].[Table1] AS t1\r\nLEFT JOIN [TestDatabase].[dbo].[Table2] AS t2\r\n    ON t1.[Key1] = t2.[ForeignKey1]\r\nLEFT JOIN [TestDatabase].[dbo].[Table3] AS t3\r\n    ON t2.[ForeignKey3] = t3.[Key3]\r\n";
 
         var table1 = new TableInfo
         {
@@ -212,7 +212,7 @@ public class GenerateSelectStatement_Should
     [Fact]
     public void GenerateCorrectSql_WhenColumnsToSelectAreInDifferentTables_AndSomeTablesCanBeDirectlyJoinedAndSomeMustBeInDirectlyJoined()
     {
-        const string expectedSql = "SELECT t1.[Column1], t2.[Column2], t4.[Column4]\r\nFROM [TestDatabase].[dbo].[Table1] AS t1\r\nLEFT JOIN [TestDatabase].[dbo].[Table2] AS t2\r\n    ON t1.[Key1] = t2.[ForeignKey1]\r\nLEFT JOIN [TestDatabase].[dbo].[Table3] AS t3\r\n    ON t2.[Key2] = t3.[ForeignKey2]\r\nLEFT JOIN [TestDatabase].[dbo].[Table4] AS t4\r\n    ON t3.[Key3] = t4.[ForeignKey3]\r\n";
+        const string expectedSql = "USE [TestDatabase];\r\nSELECT t1.[Column1], t2.[Column2], t4.[Column4]\r\nFROM [TestDatabase].[dbo].[Table1] AS t1\r\nLEFT JOIN [TestDatabase].[dbo].[Table2] AS t2\r\n    ON t1.[Key1] = t2.[ForeignKey1]\r\nLEFT JOIN [TestDatabase].[dbo].[Table3] AS t3\r\n    ON t2.[Key2] = t3.[ForeignKey2]\r\nLEFT JOIN [TestDatabase].[dbo].[Table4] AS t4\r\n    ON t3.[Key3] = t4.[ForeignKey3]\r\n";
 
         var table1 = new TableInfo
         {
@@ -443,7 +443,7 @@ public class GenerateSelectStatement_Should
     [Fact]
     public void HandleNullColumns_InColumnList()
     {
-        const string expectedSql = "SELECT t1.[Column1]\r\nFROM [TestDatabase].[dbo].[TestTable] AS t1\r\n";
+        const string expectedSql = "USE [TestDatabase];\r\nSELECT t1.[Column1]\r\nFROM [TestDatabase].[dbo].[TestTable] AS t1\r\n";
         var databaseInfo = new DatabaseInfo
         {
             Name = "TestDatabase",
@@ -475,7 +475,7 @@ public class GenerateSelectStatement_Should
     [Fact]
     public void HandleDuplicateColumns_InColumnList()
     {
-        const string expectedSql = "SELECT t1.[Column1], t1.[Column1]\r\nFROM [TestDatabase].[dbo].[TestTable] AS t1\r\n";
+        const string expectedSql = "USE [TestDatabase];\r\nSELECT t1.[Column1], t1.[Column1]\r\nFROM [TestDatabase].[dbo].[TestTable] AS t1\r\n";
         var databaseInfo = new DatabaseInfo
         {
             Name = "TestDatabase",
@@ -552,7 +552,7 @@ public class GenerateSelectStatement_Should
     [Fact]
     public void GenerateCorrectSql_WithSpecialCharactersInNames()
     {
-        const string expectedSql = "SELECT t1.[Column.1], t1.[Column[2]]\r\nFROM [Test.Database].[dbo].[Test.Table] AS t1\r\n";
+        const string expectedSql = "USE [Test.Database];\r\nSELECT t1.[Column.1], t1.[Column[2]]\r\nFROM [Test.Database].[dbo].[Test.Table] AS t1\r\n";
         var databaseInfo = new DatabaseInfo
         {
             Name = "Test.Database",
@@ -584,7 +584,7 @@ public class GenerateSelectStatement_Should
     [Fact]
     public void HandleWhitespaceInNames()
     {
-        const string expectedSql = "SELECT t1.[Column Name], t1.[Table Column]\r\nFROM [Test Database].[dbo].[Test Table] AS t1\r\n";
+        const string expectedSql = "USE [Test Database];\r\nSELECT t1.[Column Name], t1.[Table Column]\r\nFROM [Test Database].[dbo].[Test Table] AS t1\r\n";
         var databaseInfo = new DatabaseInfo
         {
             Name = "Test Database",

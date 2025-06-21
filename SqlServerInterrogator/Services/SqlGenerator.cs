@@ -83,6 +83,7 @@ public class SqlGenerator
 
         // Start building the SQL
         var sql = new System.Text.StringBuilder();
+        _ = sql.AppendLine($"USE [{databaseInfo.Name}];");
         _ = sql.AppendLine($"SELECT {string.Join(", ", columnSelections)}");
         _ = sql.AppendLine($"FROM [{databaseInfo.Name}].[dbo].[{mainTable.Name}] AS t{mainTable.TableId}");
 
