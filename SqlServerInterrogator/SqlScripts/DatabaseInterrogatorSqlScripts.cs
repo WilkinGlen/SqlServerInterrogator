@@ -28,6 +28,7 @@ internal static class DatabaseInterrogatorSqlScripts
                 INNER JOIN sys.indexes i ON t.object_id = i.object_id
                     INNER JOIN sys.partitions p ON i.object_id = p.object_id AND i.index_id = p.index_id
         WHERE i.index_id <= 1
+        AND t.name <> 'sysdiagrams'
         ORDER BY s.name, t.name";
 
     internal const string GetColumnInfoEnumerableAsyncSql =
