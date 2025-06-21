@@ -79,13 +79,17 @@ public class SqlGenerator
 
         // Build column selections with table aliases
         var columnSelections = validColumns
-            .Select(c => $"t{c.TableId}.[{c.Name}]");
+            .Select(c =>
+            {
+                var table = databaseInfo.Tables.First(t => t.TableId == c.TableId);
+                return $"[{table.Name}].[{c.Name}]";  // Add brackets around table name
+            });
 
         // Start building the SQL
         var sql = new System.Text.StringBuilder();
         _ = sql.AppendLine($"USE [{databaseInfo.Name}];");
         _ = sql.AppendLine($"SELECT {string.Join(", ", columnSelections)}");
-        _ = sql.AppendLine($"FROM [{databaseInfo.Name}].[dbo].[{mainTable.Name}] AS t{mainTable.TableId}");
+        _ = sql.AppendLine($"FROM [{databaseInfo.Name}].[dbo].[{mainTable.Name}] AS [{mainTable.Name}]");
 
         // Build necessary joins
         foreach (var tableGroup in columnsByTable)
@@ -107,7 +111,7 @@ public class SqlGenerator
 
                 if (!usedTables.Contains(table.TableId))
                 {
-                    _ = sql.AppendLine($"LEFT JOIN [{databaseInfo.Name}].[dbo].[{table.Name}] AS t{table.TableId}");
+                    _ = sql.AppendLine($"LEFT JOIN [{databaseInfo.Name}].[dbo].[{table.Name}] AS [{table.Name}]");
                     // Generate the join condition based on the found key
                     var joinCondition = GenerateJoinCondition(joinKey!, joinPath.Tables[i - 1].Table, table);
                     _ = sql.AppendLine($"    ON {joinCondition}");
@@ -224,12 +228,12 @@ public class SqlGenerator
         // If the foreign key is in the source table
         if (string.Equals(key.ReferencedTableName, targetTable.Name, StringComparison.OrdinalIgnoreCase))
         {
-            return $"t{sourceTable.TableId}.[{key.SourceColumnName}] = " +
-                   $"t{targetTable.TableId}.[{key.ReferencedColumnName}]";
+            return $"[{sourceTable.Name}].[{key.SourceColumnName}] = " +
+                   $"[{targetTable.Name}].[{key.ReferencedColumnName}]";
         }
 
         // If the foreign key is in the target table
-        return $"t{sourceTable.TableId}.[{key.ReferencedColumnName}] = " +
-               $"t{targetTable.TableId}.[{key.SourceColumnName}]";
+        return $"[{sourceTable.Name}].[{key.ReferencedColumnName}] = " +
+               $"[{targetTable.Name}].[{key.SourceColumnName}]";
     }
 }
