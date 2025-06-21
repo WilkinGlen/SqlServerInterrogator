@@ -459,10 +459,11 @@ public class DatabaseInterrogator
     ///    - Tables that have foreign keys pointing to this table
     ///    - Tables that this table points to via foreign keys
     /// 2. Finds indirect relationships by recursively traversing the table relationships
+    /// 3. Removes any duplicate relationships to ensure each table appears only once in the join list
     /// 
     /// All relationships are stored in the TablesICanJoinTo collection of each table,
     /// enabling navigation through both direct and indirect table relationships.
-    /// Duplicate relationships are automatically removed.
+    /// The final list is deduplicated to maintain a clean, unique set of relationships.
     /// </remarks>
     public static void PopulateDatabaseForeignAndPrimaryTables(DatabaseInfo databaseInfo)
     {
