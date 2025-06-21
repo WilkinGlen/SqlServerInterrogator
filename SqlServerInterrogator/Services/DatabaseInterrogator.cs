@@ -192,7 +192,8 @@ public class DatabaseInterrogator
                 OrdinalPosition = reader.GetInt32(reader.GetOrdinal("OrdinalPosition")),
                 DefaultValue = reader.IsDBNull(reader.GetOrdinal("DefaultValue"))
                     ? null
-                    : reader.GetString(reader.GetOrdinal("DefaultValue"))
+                    : reader.GetString(reader.GetOrdinal("DefaultValue")),
+                DatabaseName = databaseName
             };
         }
     }
@@ -261,9 +262,11 @@ public class DatabaseInterrogator
                 Name = reader.GetString(reader.GetOrdinal("Name")),
                 TableId = reader.GetInt32(reader.GetOrdinal("TableId")),
                 Type = reader.GetString(reader.GetOrdinal("Type")),
+                TypeDesc = reader.GetString(reader.GetOrdinal("TypeDesc")),
                 IsPrimaryKey = reader.GetBoolean(reader.GetOrdinal("IsPrimaryKey")),
                 IsUnique = reader.GetBoolean(reader.GetOrdinal("IsUnique")),
                 IsForeignKey = reader.GetBoolean(reader.GetOrdinal("IsForeignKey")),
+                IsDisabled = reader.GetBoolean(reader.GetOrdinal("IsDisabled")),
                 IsSystemNamed = reader.GetBoolean(reader.GetOrdinal("IsSystemNamed")),
                 CreateDate = reader.GetDateTime(reader.GetOrdinal("CreateDate")),
                 ModifyDate = reader.GetDateTime(reader.GetOrdinal("ModifyDate")),
@@ -275,7 +278,16 @@ public class DatabaseInterrogator
                     : reader.GetString(reader.GetOrdinal("ReferencedTableName")),
                 ReferencedColumnName = reader.IsDBNull(reader.GetOrdinal("ReferencedColumnName"))
                     ? null
-                    : reader.GetString(reader.GetOrdinal("ReferencedColumnName"))
+                    : reader.GetString(reader.GetOrdinal("ReferencedColumnName")),
+                SourceColumnName = reader.IsDBNull(reader.GetOrdinal("SourceColumnName"))
+                    ? null
+                    : reader.GetString(reader.GetOrdinal("SourceColumnName")),
+                DeleteReferentialAction = reader.IsDBNull(reader.GetOrdinal("DeleteReferentialAction"))
+                    ? null
+                    : reader.GetString(reader.GetOrdinal("DeleteReferentialAction")),
+                UpdateReferentialAction = reader.IsDBNull(reader.GetOrdinal("UpdateReferentialAction"))
+                    ? null
+                    : reader.GetString(reader.GetOrdinal("UpdateReferentialAction"))
             };
         }
     }

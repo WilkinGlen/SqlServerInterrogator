@@ -59,17 +59,23 @@ internal static class DatabaseInterrogatorSqlScripts
             kc.name AS Name,
             kc.parent_object_id AS TableId,
             kc.type AS Type,
+            obj.type_desc AS TypeDesc,
             CAST(CASE WHEN kc.type = 'PK' THEN 1 ELSE 0 END AS bit) AS IsPrimaryKey,
             CAST(CASE WHEN kc.type = 'UQ' THEN 1 ELSE 0 END AS bit) AS IsUnique,
             CAST(0 AS bit) AS IsForeignKey,
+            CAST(0 AS bit) AS IsDisabled,
             kc.is_system_named AS IsSystemNamed,
             kc.create_date AS CreateDate,
             kc.modify_date AS ModifyDate,
             NULL AS ReferencedTableSchema,
             NULL AS ReferencedTableName,
-            NULL AS ReferencedColumnName
+            NULL AS ReferencedColumnName,
+            NULL AS SourceColumnName,
+            NULL AS DeleteReferentialAction,
+            NULL AS UpdateReferentialAction
         FROM sys.tables t
             INNER JOIN sys.key_constraints kc ON t.object_id = kc.parent_object_id
+            INNER JOIN sys.objects obj ON kc.object_id = obj.object_id
         WHERE t.object_id = @TableId
         UNION ALL
         SELECT 
@@ -77,22 +83,30 @@ internal static class DatabaseInterrogatorSqlScripts
             fk.name AS Name,
             fk.parent_object_id AS TableId,
             'F' AS Type,
+            obj.type_desc AS TypeDesc,
             CAST(0 AS bit) AS IsPrimaryKey,
             CAST(0 AS bit) AS IsUnique,
             CAST(1 AS bit) AS IsForeignKey,
+            fk.is_disabled AS IsDisabled,
             fk.is_system_named AS IsSystemNamed,
             fk.create_date AS CreateDate,
             fk.modify_date AS ModifyDate,
             referenced_schema.name AS ReferencedTableSchema,
             referenced_table.name AS ReferencedTableName,
-            referenced_column.name AS ReferencedColumnName
+            referenced_column.name AS ReferencedColumnName,
+            source_column.name AS SourceColumnName,
+            fk.delete_referential_action_desc AS DeleteReferentialAction,
+            fk.update_referential_action_desc AS UpdateReferentialAction
         FROM sys.tables t
             INNER JOIN sys.foreign_keys fk ON t.object_id = fk.parent_object_id
+            INNER JOIN sys.objects obj ON fk.object_id = obj.object_id
             INNER JOIN sys.foreign_key_columns fkc ON fk.object_id = fkc.constraint_object_id
             INNER JOIN sys.tables referenced_table ON fk.referenced_object_id = referenced_table.object_id
             INNER JOIN sys.schemas referenced_schema ON referenced_table.schema_id = referenced_schema.schema_id
             INNER JOIN sys.columns referenced_column ON fkc.referenced_object_id = referenced_column.object_id 
                 AND fkc.referenced_column_id = referenced_column.column_id
+            INNER JOIN sys.columns source_column ON fkc.parent_object_id = source_column.object_id 
+                AND fkc.parent_column_id = source_column.column_id
         WHERE t.object_id = @TableId;";
 
     internal static string GetIndexInfoEnumerableAsyncSql =

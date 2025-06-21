@@ -16,4 +16,5 @@ public sealed class ColumnInfo
     public string? Description { get; set; }
     public int TableId { get; set; }
     public int OrdinalPosition { get; set; }
+    public string? DatabaseName { get; set; }
 }
