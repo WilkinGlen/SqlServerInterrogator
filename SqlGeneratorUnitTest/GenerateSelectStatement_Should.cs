@@ -354,7 +354,7 @@ public class GenerateSelectStatement_Should
             Name = "TestDatabase",
             Tables = []
         };
-        
+
         var action = () => SqlGenerator.GenerateSelectStatement([], databaseInfo);
 
         _ = action.Should()
@@ -370,7 +370,7 @@ public class GenerateSelectStatement_Should
             Name = "TestDatabase",
             Tables = []
         };
-        
+
         var action = () => SqlGenerator.GenerateSelectStatement(null!, databaseInfo);
 
         _ = action.Should()
