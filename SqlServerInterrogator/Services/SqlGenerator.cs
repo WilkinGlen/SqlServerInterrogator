@@ -48,12 +48,12 @@ public class SqlGenerator
         var mainTable = databaseInfo.Tables.First(t => t.TableId == firstColumn.TableId);
         var usedTables = new HashSet<int> { mainTable.TableId };
 
-        // Build column selections with table aliases
+        // Build column selections with table aliases and dot-separated alias
         var columnSelections = validColumns
             .Select(c =>
             {
                 var table = databaseInfo.Tables.First(t => t.TableId == c.TableId);
-                return $"[{table.Name}].[{c.Name}]";  // Add brackets around table name
+                return $"[{table.Name}].[{c.Name}] AS [{table.Name}.{c.Name}]";
             });
 
         // Start building the SQL

@@ -9,7 +9,7 @@ public class GenerateSelectStatement_Should
     [Fact]
     public void GenerateCorrectSql_WhenAllColumnsToSelectAreInSameTable()
     {
-        const string expectedSql = "USE [TestDatabase];\r\nSELECT [TestTable].[Column1], [TestTable].[Column2]\r\nFROM [TestDatabase].[dbo].[TestTable] AS [TestTable]\r\n";
+        const string expectedSql = "USE [TestDatabase];\r\nSELECT [TestTable].[Column1] AS [TestTable.Column1], [TestTable].[Column2] AS [TestTable.Column2]\r\nFROM [TestDatabase].[dbo].[TestTable] AS [TestTable]\r\n";
         var databaseInfo = new DatabaseInfo
         {
             Name = "TestDatabase",
@@ -38,7 +38,7 @@ public class GenerateSelectStatement_Should
     [Fact]
     public void GenerateCorrectSql_WhenColumnsToSelectAreInDifferentTables_ThatCanBeJoinedDirectly()
     {
-        const string expectedSql = "USE [TestDatabase];\r\nSELECT [Table1].[Column1], [Table2].[Column2]\r\nFROM [TestDatabase].[dbo].[Table1] AS [Table1]\r\nLEFT JOIN [TestDatabase].[dbo].[Table2] AS [Table2]\r\n    ON [Table1].[Key] = [Table2].[ForeignKey]\r\n";
+        const string expectedSql = "USE [TestDatabase];\r\nSELECT [Table1].[Column1] AS [Table1.Column1], [Table2].[Column2] AS [Table2.Column2]\r\nFROM [TestDatabase].[dbo].[Table1] AS [Table1]\r\nLEFT JOIN [TestDatabase].[dbo].[Table2] AS [Table2]\r\n    ON [Table1].[Key] = [Table2].[ForeignKey]\r\n";
 
         var table1 = new TableInfo
         {
@@ -109,7 +109,7 @@ public class GenerateSelectStatement_Should
     [Fact]
     public void GenerateCorrectSql_WhenColumnsToSelectAreInDifferentTables_ThatMustBeJoinedIndirectly()
     {
-        const string expectedSql = "USE [TestDatabase];\r\nSELECT [Table1].[Column1], [Table3].[Column3]\r\nFROM [TestDatabase].[dbo].[Table1] AS [Table1]\r\nLEFT JOIN [TestDatabase].[dbo].[Table2] AS [Table2]\r\n    ON [Table1].[Key1] = [Table2].[ForeignKey1]\r\nLEFT JOIN [TestDatabase].[dbo].[Table3] AS [Table3]\r\n    ON [Table2].[ForeignKey3] = [Table3].[Key3]\r\n";
+        const string expectedSql = "USE [TestDatabase];\r\nSELECT [Table1].[Column1] AS [Table1.Column1], [Table3].[Column3] AS [Table3.Column3]\r\nFROM [TestDatabase].[dbo].[Table1] AS [Table1]\r\nLEFT JOIN [TestDatabase].[dbo].[Table2] AS [Table2]\r\n    ON [Table1].[Key1] = [Table2].[ForeignKey1]\r\nLEFT JOIN [TestDatabase].[dbo].[Table3] AS [Table3]\r\n    ON [Table2].[ForeignKey3] = [Table3].[Key3]\r\n";
 
         var table1 = new TableInfo
         {
@@ -212,7 +212,7 @@ public class GenerateSelectStatement_Should
     [Fact]
     public void GenerateCorrectSql_WhenColumnsToSelectAreInDifferentTables_AndSomeTablesCanBeDirectlyJoinedAndSomeMustBeInDirectlyJoined()
     {
-        const string expectedSql = "USE [TestDatabase];\r\nSELECT [Table1].[Column1], [Table2].[Column2], [Table4].[Column4]\r\nFROM [TestDatabase].[dbo].[Table1] AS [Table1]\r\nLEFT JOIN [TestDatabase].[dbo].[Table2] AS [Table2]\r\n    ON [Table1].[Key1] = [Table2].[ForeignKey1]\r\nLEFT JOIN [TestDatabase].[dbo].[Table3] AS [Table3]\r\n    ON [Table2].[Key2] = [Table3].[ForeignKey2]\r\nLEFT JOIN [TestDatabase].[dbo].[Table4] AS [Table4]\r\n    ON [Table3].[Key3] = [Table4].[ForeignKey3]\r\n";
+        const string expectedSql = "USE [TestDatabase];\r\nSELECT [Table1].[Column1] AS [Table1.Column1], [Table2].[Column2] AS [Table2.Column2], [Table4].[Column4] AS [Table4.Column4]\r\nFROM [TestDatabase].[dbo].[Table1] AS [Table1]\r\nLEFT JOIN [TestDatabase].[dbo].[Table2] AS [Table2]\r\n    ON [Table1].[Key1] = [Table2].[ForeignKey1]\r\nLEFT JOIN [TestDatabase].[dbo].[Table3] AS [Table3]\r\n    ON [Table2].[Key2] = [Table3].[ForeignKey2]\r\nLEFT JOIN [TestDatabase].[dbo].[Table4] AS [Table4]\r\n    ON [Table3].[Key3] = [Table4].[ForeignKey3]\r\n";
 
         var table1 = new TableInfo
         {
@@ -443,7 +443,7 @@ public class GenerateSelectStatement_Should
     [Fact]
     public void HandleNullColumns_InColumnList()
     {
-        const string expectedSql = "USE [TestDatabase];\r\nSELECT [TestTable].[Column1]\r\nFROM [TestDatabase].[dbo].[TestTable] AS [TestTable]\r\n";
+        const string expectedSql = "USE [TestDatabase];\r\nSELECT [TestTable].[Column1] AS [TestTable.Column1]\r\nFROM [TestDatabase].[dbo].[TestTable] AS [TestTable]\r\n";
         var databaseInfo = new DatabaseInfo
         {
             Name = "TestDatabase",
@@ -475,7 +475,7 @@ public class GenerateSelectStatement_Should
     [Fact]
     public void HandleDuplicateColumns_InColumnList()
     {
-        const string expectedSql = "USE [TestDatabase];\r\nSELECT [TestTable].[Column1], [TestTable].[Column1]\r\nFROM [TestDatabase].[dbo].[TestTable] AS [TestTable]\r\n";
+        const string expectedSql = "USE [TestDatabase];\r\nSELECT [TestTable].[Column1] AS [TestTable.Column1], [TestTable].[Column1] AS [TestTable.Column1]\r\nFROM [TestDatabase].[dbo].[TestTable] AS [TestTable]\r\n";
         var databaseInfo = new DatabaseInfo
         {
             Name = "TestDatabase",
@@ -552,7 +552,7 @@ public class GenerateSelectStatement_Should
     [Fact]
     public void GenerateCorrectSql_WithSpecialCharactersInNames()
     {
-        const string expectedSql = "USE [Test.Database];\r\nSELECT [Test.Table].[Column.1], [Test.Table].[Column[2]]\r\nFROM [Test.Database].[dbo].[Test.Table] AS [Test.Table]\r\n";
+        const string expectedSql = "USE [Test.Database];\r\nSELECT [Test.Table].[Column.1] AS [Test.Table.Column.1], [Test.Table].[Column[2]] AS [Test.Table.Column[2]]\r\nFROM [Test.Database].[dbo].[Test.Table] AS [Test.Table]\r\n";
         var databaseInfo = new DatabaseInfo
         {
             Name = "Test.Database",
@@ -584,7 +584,7 @@ public class GenerateSelectStatement_Should
     [Fact]
     public void HandleWhitespaceInNames()
     {
-        const string expectedSql = "USE [Test Database];\r\nSELECT [Test Table].[Column Name], [Test Table].[Table Column]\r\nFROM [Test Database].[dbo].[Test Table] AS [Test Table]\r\n";
+        const string expectedSql = "USE [Test Database];\r\nSELECT [Test Table].[Column Name] AS [Test Table.Column Name], [Test Table].[Table Column] AS [Test Table.Table Column]\r\nFROM [Test Database].[dbo].[Test Table] AS [Test Table]\r\n";
         var databaseInfo = new DatabaseInfo
         {
             Name = "Test Database",
