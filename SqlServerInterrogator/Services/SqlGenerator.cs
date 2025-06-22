@@ -21,7 +21,7 @@ public class SqlGenerator
     /// Represents a path of joined tables and their connecting relationships.
     /// Used internally for tracking and building complex table joins.
     /// </summary>
-    private class JoinPath
+    internal class JoinPath
     {
         /// <summary>
         /// Gets the list of tables and their join keys in the path.
@@ -138,7 +138,7 @@ public class SqlGenerator
     /// 3. Examines both incoming and outgoing foreign key relationships
     /// 4. Builds a complete path including intermediate tables when necessary
     /// </remarks>
-    private static JoinPath? FindJoinPath(TableInfo source, TableInfo target, List<TableInfo> allTables)
+    internal static JoinPath? FindJoinPath(TableInfo source, TableInfo target, List<TableInfo> allTables)
     {
         var visited = new HashSet<int>();
         var queue = new Queue<JoinPath>();

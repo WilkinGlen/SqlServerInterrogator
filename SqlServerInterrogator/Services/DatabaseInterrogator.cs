@@ -454,63 +454,25 @@ public class DatabaseInterrogator
     /// </summary>
     /// <param name="databaseInfo">The database information containing tables and their relationships.</param>
     /// <remarks>
-    /// For each table, this method:
-    /// 1. Finds direct relationships by identifying:
-    ///    - Tables that have foreign keys pointing to this table
-    ///    - Tables that this table points to via foreign keys
-    /// 2. Finds indirect relationships by recursively traversing the table relationships
-    /// 3. Removes any duplicate relationships to ensure each table appears only once in the join list
-    /// 
-    /// All relationships are stored in the TablesICanJoinTo collection of each table,
-    /// enabling navigation through both direct and indirect table relationships.
-    /// The final list is deduplicated to maintain a clean, unique set of relationships.
+    /// For each table, this method finds all other tables it can join to using SqlGenerator.FindJoinPath.
     /// </remarks>
     public static void PopulateDatabaseForeignAndPrimaryTables(DatabaseInfo databaseInfo)
     {
+        // For each table, find all other tables it can join to using SqlGenerator.FindJoinPath
         foreach (var table in databaseInfo.Tables)
         {
-            table.TablesICanJoinTo =
-                [.. databaseInfo.Tables.Where(x => x.Keys.Any(k => k.ReferencedTableName == table.Name))];
-            table.TablesICanJoinTo.AddRange(
-                [.. databaseInfo.Tables.Where(primaryTable => table.Keys.Any(k => k.ReferencedTableName == primaryTable.Name))]);
-        }
-
-        foreach (var table in databaseInfo.Tables)
-        {
-            table.TablesICanJoinTo.AddRange(GetIndirectTablesICanJoinTo(table));
-            table.TablesICanJoinTo = [.. table.TablesICanJoinTo.Distinct()];
-        }
-    }
-
-    private static List<TableInfo> GetIndirectTablesICanJoinTo(TableInfo table)
-    {
-        List<TableInfo> checkedTables = [];
-        List<TableInfo> indirectTables = [];
-        processTablesICanLinkTo(table);
-
-        return indirectTables;
-
-        void processTablesICanLinkTo(TableInfo currentTable)
-        {
-            if (checkedTables.Contains(currentTable))
+            table.TablesICanJoinTo = [];
+            foreach (var candidate in databaseInfo.Tables)
             {
-                return;
-            }
+                if (table.TableId == candidate.TableId)
+                    continue;
 
-            if (currentTable.TablesICanJoinTo.Count == 0)
-            {
-                return;
-            }
-
-            checkedTables.Add(currentTable);
-            foreach (var linkedTable in currentTable.TablesICanJoinTo)
-            {
-                if (!indirectTables.Contains(linkedTable))
+                // Use FindJoinPath to determine if a join path exists
+                var joinPath = SqlServerInterrogator.Services.SqlGenerator.FindJoinPath(table, candidate, databaseInfo.Tables);
+                if (joinPath != null)
                 {
-                    indirectTables.Add(linkedTable);
+                    table.TablesICanJoinTo.Add(candidate);
                 }
-
-                processTablesICanLinkTo(linkedTable);
             }
         }
     }
