@@ -454,7 +454,7 @@ public class DatabaseInterrogator
     /// </summary>
     /// <param name="databaseInfo">The database information containing tables and their relationships.</param>
     /// <remarks>
-    /// For each table, this method finds all other tables it can join to using SqlGenerator.FindJoinPath.
+    /// For each table, this method finds all other tables it can join to using FindJoinPath.
     /// </remarks>
     public static void PopulateDatabaseForeignAndPrimaryTables(DatabaseInfo databaseInfo)
     {

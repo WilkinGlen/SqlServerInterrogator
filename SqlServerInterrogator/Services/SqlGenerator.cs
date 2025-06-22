@@ -3,17 +3,16 @@
 using SqlServerInterrogator.Models;
 
 /// <summary>
-/// Provides methods for generating SQL statements based on database schema and relationships.
-/// This class specializes in creating optimized SELECT statements by analyzing database metadata
-/// and automatically determining the most efficient join paths between tables.
+/// Provides methods for generating SQL SELECT statements based on database schema and relationships.
+/// This class specializes in creating SELECT statements with automatic join path discovery using a graph-based approach.
 /// </summary>
 /// <remarks>
-/// The class uses a graph-based approach to determine optimal join paths between tables,
-/// supporting both direct and indirect relationships through foreign keys. It handles:
-/// - Multi-table joins with proper aliasing
-/// - Bi-directional foreign key relationships
-/// - Validation of table relationships
-/// - Proper SQL syntax generation with schema qualification
+/// - Supports direct and indirect (multi-hop) joins via foreign keys (shortest path).
+/// - Table aliases are used in the FROM and JOIN clauses; column aliasing is not applied.
+/// - Only the [dbo] schema is supported for table references.
+/// - Throws <see cref="InvalidOperationException"/> if no join path exists between required tables.
+/// - Handles bi-directional foreign key relationships, but does not support self-joins or multiple FKs between the same tables with disambiguation.
+/// - Disconnected tables (no join path) will cause an exception if columns from both are requested.
 /// </remarks>
 public class SqlGenerator
 {
