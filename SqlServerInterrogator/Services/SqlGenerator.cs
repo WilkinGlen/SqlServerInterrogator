@@ -18,26 +18,6 @@ using SqlServerInterrogator.Models;
 public class SqlGenerator
 {
     /// <summary>
-    /// Represents a path of joined tables and their connecting relationships.
-    /// Used internally for tracking and building complex table joins.
-    /// </summary>
-    internal class JoinPath
-    {
-        /// <summary>
-        /// Gets the list of tables and their join keys in the path.
-        /// The first table in the list is the source table and has a null JoinKey.
-        /// Subsequent tables include the foreign key relationship used to join to the previous table.
-        /// </summary>
-        /// <remarks>
-        /// The list maintains the order of joins, where each entry after the first contains:
-        /// - The table to join to
-        /// - The foreign key relationship used to establish the join
-        /// This structure ensures proper join order and relationship tracking.
-        /// </remarks>
-        public List<(TableInfo Table, KeyInfo? JoinKey)> Tables { get; } = [];
-    }
-
-    /// <summary>
     /// Generates a SQL SELECT statement based on the specified columns and database information.
     /// Automatically determines and includes necessary table joins based on foreign key relationships.
     /// </summary>
@@ -45,14 +25,6 @@ public class SqlGenerator
     /// <param name="databaseInfo">Database metadata containing table and relationship information.</param>
     /// <returns>A complete SQL SELECT statement string with proper joins and aliasing, or empty string if no valid columns are provided.</returns>
     /// <exception cref="InvalidOperationException">Thrown when no valid join path can be found between tables containing the selected columns.</exception>
-    /// <remarks>
-    /// The method performs the following steps:
-    /// 1. Validates input columns and database info
-    /// 2. Determines the main (first) table and creates proper table aliases
-    /// 3. Analyzes required joins based on column table relationships
-    /// 4. Generates optimized join paths using foreign key metadata
-    /// 5. Produces a fully-qualified SQL statement with proper syntax
-    /// </remarks>
     public static string GenerateSelectStatement(IEnumerable<ColumnInfo> columns, DatabaseInfo databaseInfo)
     {
         if (columns == null || !columns.Any() || databaseInfo == null)
@@ -100,8 +72,9 @@ public class SqlGenerator
             }
 
             var targetTable = databaseInfo.Tables.First(t => t.TableId == tableGroup.Key);
+            // Use the new location for FindJoinPath (DatabaseInterrogator)
             var joinPath =
-                FindJoinPath(mainTable, targetTable, databaseInfo.Tables) ??
+                SqlServerInterrogator.Services.DatabaseInterrogator.FindJoinPath(mainTable, targetTable, databaseInfo.Tables) ??
                 throw new InvalidOperationException($"No join path found between tables {mainTable.Name} and {targetTable.Name}");
 
             // Skip the first table as it's our main table
@@ -121,91 +94,6 @@ public class SqlGenerator
         }
 
         return sql.ToString();
-    }
-
-    /// <summary>
-    /// Finds a path between two tables using their relationships through foreign keys.
-    /// Implements a breadth-first search algorithm to find the shortest possible join path.
-    /// </summary>
-    /// <param name="source">The source table to start the path from.</param>
-    /// <param name="target">The target table to find a path to.</param>
-    /// <param name="allTables">List of all available tables in the database.</param>
-    /// <returns>A JoinPath containing the sequence of tables and their join keys, or null if no path is found.</returns>
-    /// <remarks>
-    /// The algorithm:
-    /// 1. Uses breadth-first search to guarantee the shortest path
-    /// 2. Tracks visited tables to prevent cycles
-    /// 3. Examines both incoming and outgoing foreign key relationships
-    /// 4. Builds a complete path including intermediate tables when necessary
-    /// </remarks>
-    internal static JoinPath? FindJoinPath(TableInfo source, TableInfo target, List<TableInfo> allTables)
-    {
-        var visited = new HashSet<int>();
-        var queue = new Queue<JoinPath>();
-        var initial = new JoinPath();
-        initial.Tables.Add((source, null));
-        queue.Enqueue(initial);
-        _ = visited.Add(source.TableId);
-
-        while (queue.Count > 0)
-        {
-            var currentPath = queue.Dequeue();
-            var currentTable = currentPath.Tables[^1].Table;
-
-            // Check if we found a path to the target
-            if (currentTable.TableId == target.TableId)
-            {
-                return currentPath;
-            }
-            // Find all tables we can join to from here
-            foreach (var nextTable in allTables)
-            {
-                if (visited.Contains(nextTable.TableId))
-                {
-                    continue;
-                }
-
-                var joinKey = FindJoinKey(currentTable, nextTable);
-                if (joinKey != null)
-                {
-                    var newPath = new JoinPath();
-                    newPath.Tables.AddRange(currentPath.Tables);
-                    newPath.Tables.Add((nextTable, joinKey));
-                    queue.Enqueue(newPath);
-                    _ = visited.Add(nextTable.TableId);
-                }
-            }
-        }
-
-        return null;
-    }
-
-    /// <summary>
-    /// Finds a foreign key relationship between two tables by examining both tables' keys.
-    /// </summary>
-    /// <param name="source">The source table to check for relationships.</param>
-    /// <param name="target">The target table to check for relationships.</param>
-    /// <returns>A KeyInfo object representing the foreign key relationship, or null if no relationship exists.</returns>
-    /// <remarks>
-    /// The method performs a bi-directional search for relationships:
-    /// 1. First checks foreign keys in the source table pointing to the target
-    /// 2. If no relationship is found, checks foreign keys in the target table pointing to the source
-    /// 3. Comparison of table names is case-insensitive for flexibility
-    /// </remarks>
-    private static KeyInfo? FindJoinKey(TableInfo source, TableInfo target)
-    {
-        // Check foreign keys in the source table pointing to the target
-        var sourceToTarget = source.Keys
-            .FirstOrDefault(k => k.IsForeignKey &&
-                string.Equals(k.ReferencedTableName, target.Name, StringComparison.OrdinalIgnoreCase));
-        if (sourceToTarget != null)
-        {
-            return sourceToTarget;
-        }
-        // Check foreign keys in the target table pointing to the source
-        return target.Keys
-            .FirstOrDefault(k => k.IsForeignKey &&
-                string.Equals(k.ReferencedTableName, source.Name, StringComparison.OrdinalIgnoreCase));
     }
 
     /// <summary>

@@ -468,13 +468,85 @@ public class DatabaseInterrogator
                     continue;
 
                 // Use FindJoinPath to determine if a join path exists
-                var joinPath = SqlServerInterrogator.Services.SqlGenerator.FindJoinPath(table, candidate, databaseInfo.Tables);
+                var joinPath = FindJoinPath(table, candidate, databaseInfo.Tables);
                 if (joinPath != null)
                 {
                     table.TablesICanJoinTo.Add(candidate);
                 }
             }
         }
+    }
+
+    /// <summary>
+    /// Finds a path between two tables using their relationships through foreign keys.
+    /// Implements a breadth-first search algorithm to find the shortest possible join path.
+    /// </summary>
+    /// <param name="source">The source table to start the path from.</param>
+    /// <param name="target">The target table to find a path to.</param>
+    /// <param name="allTables">List of all available tables in the database.</param>
+    /// <returns>A JoinPath containing the sequence of tables and their join keys, or null if no path is found.</returns>
+    internal static JoinPath? FindJoinPath(TableInfo source, TableInfo target, List<TableInfo> allTables)
+    {
+        var visited = new HashSet<int>();
+        var queue = new Queue<JoinPath>();
+        var initial = new JoinPath();
+        initial.Tables.Add((source, null));
+        queue.Enqueue(initial);
+        _ = visited.Add(source.TableId);
+
+        while (queue.Count > 0)
+        {
+            var currentPath = queue.Dequeue();
+            var currentTable = currentPath.Tables[^1].Table;
+
+            // Check if we found a path to the target
+            if (currentTable.TableId == target.TableId)
+            {
+                return currentPath;
+            }
+            // Find all tables we can join to from here
+            foreach (var nextTable in allTables)
+            {
+                if (visited.Contains(nextTable.TableId))
+                {
+                    continue;
+                }
+
+                var joinKey = FindJoinKey(currentTable, nextTable);
+                if (joinKey != null)
+                {
+                    var newPath = new JoinPath();
+                    newPath.Tables.AddRange(currentPath.Tables);
+                    newPath.Tables.Add((nextTable, joinKey));
+                    queue.Enqueue(newPath);
+                    _ = visited.Add(nextTable.TableId);
+                }
+            }
+        }
+
+        return null;
+    }
+
+    /// <summary>
+    /// Finds a foreign key relationship between two tables by examining both tables' keys.
+    /// </summary>
+    /// <param name="source">The source table to check for relationships.</param>
+    /// <param name="target">The target table to check for relationships.</param>
+    /// <returns>A KeyInfo object representing the foreign key relationship, or null if no relationship exists.</returns>
+    private static KeyInfo? FindJoinKey(TableInfo source, TableInfo target)
+    {
+        // Check foreign keys in the source table pointing to the target
+        var sourceToTarget = source.Keys
+            .FirstOrDefault(k => k.IsForeignKey &&
+                string.Equals(k.ReferencedTableName, target.Name, StringComparison.OrdinalIgnoreCase));
+        if (sourceToTarget != null)
+        {
+            return sourceToTarget;
+        }
+        // Check foreign keys in the target table pointing to the source
+        return target.Keys
+            .FirstOrDefault(k => k.IsForeignKey &&
+                string.Equals(k.ReferencedTableName, source.Name, StringComparison.OrdinalIgnoreCase));
     }
 
     /// <summary>
@@ -521,4 +593,24 @@ public class DatabaseInterrogator
 
         return parameters;
     }
+}
+
+/// <summary>
+/// Represents a path of joined tables and their connecting relationships.
+/// Used internally for tracking and building complex table joins.
+/// </summary>
+internal class JoinPath
+{
+    /// <summary>
+    /// Gets the list of tables and their join keys in the path.
+    /// The first table in the list is the source table and has a null JoinKey.
+    /// Subsequent tables include the foreign key relationship used to join to the previous table.
+    /// </summary>
+    /// <remarks>
+    /// The list maintains the order of joins, where each entry after the first contains:
+    /// - The table to join to
+    /// - The foreign key relationship used to establish the join
+    /// This structure ensures proper join order and relationship tracking.
+    /// </remarks>
+    public List<(TableInfo Table, KeyInfo? JoinKey)> Tables { get; } = [];
 }
