@@ -24,7 +24,7 @@ public class SqlGenerator
     /// <param name="databaseInfo">Database metadata containing table and relationship information.</param>
     /// <returns>A complete SQL SELECT statement string with proper joins and aliasing, or empty string if no valid columns are provided.</returns>
     /// <exception cref="InvalidOperationException">Thrown when no valid join path can be found between tables containing the selected columns.</exception>
-    public static string GenerateSelectStatement(IEnumerable<ColumnInfo> columns, DatabaseInfo databaseInfo)
+    public static string GenerateSelectStatement(IEnumerable<ColumnInfo> columns, DatabaseInfo databaseInfo, IEnumerable<(string TableName, string ColumnName, object? Value)>? parameters = null)
     {
         if (columns == null || !columns.Any() || databaseInfo == null)
         {
@@ -92,6 +92,16 @@ public class SqlGenerator
             }
         }
 
+        // Add WHERE clause for parameters if provided
+        if (parameters != null && parameters.Any())
+        {
+            var whereClause = GenerateWhereClause(parameters);
+            if (!string.IsNullOrEmpty(whereClause))
+            {
+                _ = sql.AppendLine(whereClause);
+            }
+        }
+
         return sql.ToString();
     }
 
@@ -122,5 +132,42 @@ public class SqlGenerator
         // If the foreign key is in the target table
         return $"[{sourceTable.Name}].[{key.ReferencedColumnName}] = " +
                $"[{targetTable.Name}].[{key.SourceColumnName}]";
+    }
+
+    /// <summary>
+    /// Generates a SQL WHERE clause based on the provided parameters.
+    /// </summary>
+    /// <param name="parameters">Collection of parameters containing table name, column name, and value.</param>
+    /// <returns>A string containing the SQL WHERE clause, or an empty string if no parameters are provided.</returns>
+    private static string GenerateWhereClause(IEnumerable<(string TableName, string ColumnName, object? Value)>? parameters)
+    {
+        if (parameters == null || !parameters.Any())
+        {
+            return string.Empty;
+        }
+
+        var whereConditions = parameters
+            .Select(p =>
+            {
+                var valueLiteral = p.Value switch
+                {
+                    string strValue => $"'{strValue.Replace("'", "''")}'",
+                    bool boolValue => boolValue ? "1" : "0",
+                    DateTime dateValue => $"'{dateValue:yyyy-MM-dd HH:mm:ss}'",
+                    null => "NULL",
+                    _ => p.Value is { } obj && obj.GetType().GetProperty("ToString")?.GetValue(obj) is Func<string> toString
+                        ? toString()
+                        : p.Value.ToString()
+                };
+
+                return p.Value is null
+                    ? $"[{p.TableName}].[{p.ColumnName}] IS NULL"
+                    : $"[{p.TableName}].[{p.ColumnName}] = {valueLiteral}";
+            })
+            .ToList();
+
+        return whereConditions.Count != 0
+            ? $"WHERE {string.Join(" AND ", whereConditions)}"
+            : string.Empty;
     }
 }
