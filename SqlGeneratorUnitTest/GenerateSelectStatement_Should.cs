@@ -1120,4 +1120,316 @@ public class GenerateSelectStatement_Should
 
         _ = sql.Should().Be(expectedSql);
     }
+
+    [Fact]
+    public void HandleParameters_WithDirectJoinAndWhereClause()
+    {
+        const string expectedSql = "USE [TestDatabase];\r\nSELECT [Table1].[Column1] AS [Table1.Column1], [Table2].[Column2] AS [Table2.Column2]\r\nFROM [TestDatabase].[dbo].[Table1] AS [Table1]\r\nLEFT JOIN [TestDatabase].[dbo].[Table2] AS [Table2]\r\n    ON [Table1].[Key] = [Table2].[ForeignKey]\r\nWHERE [Table1].[Column1] = 'Value1' AND [Table2].[Column2] = 42\r\n";
+        var table1 = new TableInfo
+        {
+            TableId = 1,
+            Name = "Table1",
+            Columns =
+            [
+                new ColumnInfo { ColumnId = 1, Name = "Column1", TableId = 1 },
+                new ColumnInfo { ColumnId = 2, Name = "Key", TableId = 1 }
+            ],
+            Keys =
+            [
+                new KeyInfo
+                {
+                    KeyId = 1,
+                    Name = "PrimaryKey",
+                    TableId = 1,
+                    SourceColumnName = "Key",
+                    IsForeignKey = false
+                }
+            ]
+        };
+        var table2 = new TableInfo
+        {
+            TableId = 2,
+            Name = "Table2",
+            Columns =
+            [
+                new ColumnInfo { ColumnId = 3, Name = "Column2", TableId = 2 },
+                new ColumnInfo { ColumnId = 4, Name = "ForeignKey", TableId = 2 }
+            ],
+            Keys =
+            [
+                new KeyInfo
+                {
+                    KeyId = 2,
+                    Name = "ForeignKey",
+                    TableId = 2,
+                    IsForeignKey = true,
+                    SourceColumnName = "ForeignKey",
+                    ReferencedTableName = "Table1",
+                    ReferencedColumnName = "Key"
+                }
+            ]
+        };
+        table1.TablesICanJoinTo = [table2];
+        table2.TablesICanJoinTo = [table1];
+        var databaseInfo = new DatabaseInfo
+        {
+            Name = "TestDatabase",
+            Tables = [table1, table2]
+        };
+        var columnsToSelect = new List<ColumnInfo>
+        {
+            table1.Columns[0],
+            table2.Columns[0]
+        };
+        var parameters = new List<(string TableName, string ColumnName, object? Value)>
+        {
+            ("Table1", "Column1", "Value1"),
+            ("Table2", "Column2", 42)
+        };
+
+        var sql = SqlGenerator.GenerateSelectStatement(columnsToSelect, databaseInfo, parameters);
+
+        _ = sql.Should().Be(expectedSql);
+    }
+
+    [Fact]
+    public void HandleParameters_WithIndirectJoinAndWhereClause()
+    {
+        const string expectedSql = "USE [TestDatabase];\r\nSELECT [Table1].[Column1] AS [Table1.Column1], [Table3].[Column3] AS [Table3.Column3]\r\nFROM [TestDatabase].[dbo].[Table1] AS [Table1]\r\nLEFT JOIN [TestDatabase].[dbo].[Table2] AS [Table2]\r\n    ON [Table1].[Key1] = [Table2].[ForeignKey1]\r\nLEFT JOIN [TestDatabase].[dbo].[Table3] AS [Table3]\r\n    ON [Table2].[ForeignKey3] = [Table3].[Key3]\r\nWHERE [Table1].[Column1] = 'Value1' AND [Table3].[Column3] = 'Value3'\r\n";
+        var table1 = new TableInfo
+        {
+            TableId = 1,
+            Name = "Table1",
+            Columns =
+            [
+                new ColumnInfo { ColumnId = 1, Name = "Column1", TableId = 1 },
+                new ColumnInfo { ColumnId = 2, Name = "Key1", TableId = 1 }
+            ],
+            Keys =
+            [
+                new KeyInfo
+                {
+                    KeyId = 1,
+                    Name = "PK_Table1",
+                    TableId = 1,
+                    SourceColumnName = "Key1",
+                    IsForeignKey = false
+                }
+            ]
+        };
+        var table3 = new TableInfo
+        {
+            TableId = 3,
+            Name = "Table3",
+            Columns =
+            [
+                new ColumnInfo { ColumnId = 5, Name = "Column3", TableId = 3 },
+                new ColumnInfo { ColumnId = 6, Name = "Key3", TableId = 3 }
+            ],
+            Keys =
+            [
+                new KeyInfo
+                {
+                    KeyId = 3,
+                    Name = "PK_Table3",
+                    TableId = 3,
+                    SourceColumnName = "Key3",
+                    IsForeignKey = false
+                }
+            ]
+        };
+        var table2 = new TableInfo
+        {
+            TableId = 2,
+            Name = "Table2",
+            Columns =
+            [
+                new ColumnInfo { ColumnId = 3, Name = "ForeignKey1", TableId = 2 },
+                new ColumnInfo { ColumnId = 4, Name = "ForeignKey3", TableId = 2 }
+            ],
+            Keys =
+            [
+                new KeyInfo
+                {
+                    KeyId = 2,
+                    Name = "FK_Table2_Table1",
+                    TableId = 2,
+                    IsForeignKey = true,
+                    SourceColumnName = "ForeignKey1",
+                    ReferencedTableName = "Table1",
+                    ReferencedColumnName = "Key1"
+                },
+                new KeyInfo
+                {
+                    KeyId = 4,
+                    Name = "FK_Table2_Table3",
+                    TableId = 2,
+                    IsForeignKey = true,
+                    SourceColumnName = "ForeignKey3",
+                    ReferencedTableName = "Table3",
+                    ReferencedColumnName = "Key3"
+                }
+            ]
+        };
+        table1.TablesICanJoinTo = [table2];
+        table2.TablesICanJoinTo = [table1, table3];
+        table3.TablesICanJoinTo = [table2];
+        var databaseInfo = new DatabaseInfo
+        {
+            Name = "TestDatabase",
+            Tables = [table1, table2, table3]
+        };
+        var columnsToSelect = new List<ColumnInfo>
+        {
+            table1.Columns[0],
+            table3.Columns[0]
+        };
+        var parameters = new List<(string TableName, string ColumnName, object? Value)>
+        {
+            ("Table1", "Column1", "Value1"),
+            ("Table3", "Column3", "Value3")
+        };
+
+        var sql = SqlGenerator.GenerateSelectStatement(columnsToSelect, databaseInfo, parameters);
+
+        _ = sql.Should().Be(expectedSql);
+    }
+
+    [Fact]
+    public void HandleParameters_WithDirectAndIndirectJoinsAndWhereClause()
+    {
+        const string expectedSql = "USE [TestDatabase];\r\nSELECT [Table1].[Column1] AS [Table1.Column1], [Table2].[Column2] AS [Table2.Column2], [Table4].[Column4] AS [Table4.Column4]\r\nFROM [TestDatabase].[dbo].[Table1] AS [Table1]\r\nLEFT JOIN [TestDatabase].[dbo].[Table2] AS [Table2]\r\n    ON [Table1].[Key1] = [Table2].[ForeignKey1]\r\nLEFT JOIN [TestDatabase].[dbo].[Table3] AS [Table3]\r\n    ON [Table2].[Key2] = [Table3].[ForeignKey2]\r\nLEFT JOIN [TestDatabase].[dbo].[Table4] AS [Table4]\r\n    ON [Table3].[Key3] = [Table4].[ForeignKey3]\r\nWHERE [Table1].[Column1] = 'A' AND [Table2].[Column2] = 2 AND [Table4].[Column4] = 'Z'\r\n";
+        var table1 = new TableInfo
+        {
+            TableId = 1,
+            Name = "Table1",
+            Columns =
+            [
+                new ColumnInfo { ColumnId = 1, Name = "Column1", TableId = 1 },
+                new ColumnInfo { ColumnId = 2, Name = "Key1", TableId = 1 }
+            ],
+            Keys =
+            [
+                new KeyInfo
+                {
+                    KeyId = 1,
+                    Name = "PK_Table1",
+                    TableId = 1,
+                    SourceColumnName = "Key1",
+                    IsForeignKey = false
+                }
+            ]
+        };
+        var table2 = new TableInfo
+        {
+            TableId = 2,
+            Name = "Table2",
+            Columns =
+            [
+                new ColumnInfo { ColumnId = 3, Name = "Column2", TableId = 2 },
+                new ColumnInfo { ColumnId = 4, Name = "ForeignKey1", TableId = 2 },
+                new ColumnInfo { ColumnId = 5, Name = "Key2", TableId = 2 }
+            ],
+            Keys =
+            [
+                new KeyInfo
+                {
+                    KeyId = 2,
+                    Name = "FK_Table2_Table1",
+                    TableId = 2,
+                    IsForeignKey = true,
+                    SourceColumnName = "ForeignKey1",
+                    ReferencedTableName = "Table1",
+                    ReferencedColumnName = "Key1"
+                },
+                new KeyInfo
+                {
+                    KeyId = 3,
+                    Name = "PK_Table2",
+                    TableId = 2,
+                    SourceColumnName = "Key2",
+                    IsForeignKey = false
+                }
+            ]
+        };
+        var table3 = new TableInfo
+        {
+            TableId = 3,
+            Name = "Table3",
+            Columns =
+            [
+                new ColumnInfo { ColumnId = 6, Name = "ForeignKey2", TableId = 3 },
+                new ColumnInfo { ColumnId = 7, Name = "Key3", TableId = 3 }
+            ],
+            Keys =
+            [
+                new KeyInfo
+                {
+                    KeyId = 4,
+                    Name = "FK_Table3_Table2",
+                    TableId = 3,
+                    IsForeignKey = true,
+                    SourceColumnName = "ForeignKey2",
+                    ReferencedTableName = "Table2",
+                    ReferencedColumnName = "Key2"
+                },
+                new KeyInfo
+                {
+                    KeyId = 5,
+                    Name = "PK_Table3",
+                    TableId = 3,
+                    SourceColumnName = "Key3",
+                    IsForeignKey = false
+                }
+            ]
+        };
+        var table4 = new TableInfo
+        {
+            TableId = 4,
+            Name = "Table4",
+            Columns =
+            [
+                new ColumnInfo { ColumnId = 8, Name = "Column4", TableId = 4 },
+                new ColumnInfo { ColumnId = 9, Name = "ForeignKey3", TableId = 4 }
+            ],
+            Keys =
+            [
+                new KeyInfo
+                {
+                    KeyId = 6,
+                    Name = "FK_Table4_Table3",
+                    TableId = 4,
+                    IsForeignKey = true,
+                    SourceColumnName = "ForeignKey3",
+                    ReferencedTableName = "Table3",
+                    ReferencedColumnName = "Key3"
+                }
+            ]
+        };
+        table1.TablesICanJoinTo = [table2];
+        table2.TablesICanJoinTo = [table1, table3];
+        table3.TablesICanJoinTo = [table2, table4];
+        table4.TablesICanJoinTo = [table3];
+        var databaseInfo = new DatabaseInfo
+        {
+            Name = "TestDatabase",
+            Tables = [table1, table2, table3, table4]
+        };
+        var columnsToSelect = new List<ColumnInfo>
+        {
+            table1.Columns[0],  // Table1.Column1
+            table2.Columns[0],  // Table2.Column2
+            table4.Columns[0]   // Table4.Column4
+        };
+        var parameters = new List<(string TableName, string ColumnName, object? Value)>
+        {
+            ("Table1", "Column1", "A"),
+            ("Table2", "Column2", 2),
+            ("Table4", "Column4", "Z")
+        };
+
+        var sql = SqlGenerator.GenerateSelectStatement(columnsToSelect, databaseInfo, parameters);
+
+        _ = sql.Should().Be(expectedSql);
+    }
 }
