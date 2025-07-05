@@ -465,7 +465,9 @@ public class DatabaseInterrogator
             foreach (var candidate in databaseInfo.Tables)
             {
                 if (table.TableId == candidate.TableId)
+                {
                     continue;
+                }
 
                 // Use FindJoinPath to determine if a join path exists
                 var joinPath = FindJoinPath(table, candidate, databaseInfo.Tables);
