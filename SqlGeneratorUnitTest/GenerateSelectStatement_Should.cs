@@ -4,7 +4,7 @@ using FluentAssertions;
 using SqlServerInterrogator.Models;
 using SqlServerInterrogator.Services;
 
-public class GenerateSelectStatement_Should
+public sealed class GenerateSelectStatement_Should
 {
     [Fact]
     public void GenerateCorrectSql_WhenAllColumnsToSelectAreInSameTable()
